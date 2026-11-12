@@ -1,0 +1,116 @@
+.boton-estandar {
+    width: 100%;
+    background-color: #e5e7eb;
+    border: 1px solid #d1d5db;
+    color: #1f2937;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.boton-estandar:hover {
+    background-color: #d1d5db;
+}
+
+/* NUEVA CLASE: Para los botones que van arriba en el visor (sin ancho 100%) */
+.boton-superior {
+    width: auto !important;
+    background-color: #374151; /* Tono oscuro elegante para el visor */
+    color: #ffffff;
+    border: 1px solid #4b5563;
+    padding: 4px 10px;
+    font-size: 11px;
+}
+
+.boton-superior:hover {
+    background-color: #2563eb;
+}
+
+.boton-guardar {
+    width: 100%;
+    background-color: #1d4ed8;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background-color 0.2s;
+}
+
+.boton-guardar:hover {
+    background-color: #1e40af;
+}
+
+.panel-contador {
+    background-color: #f9fafb;
+    border: 1px solid #d1d5db;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+.boton-estandar {
+    width: 100%;
+    background-color: #e5e7eb;
+    border: 1px solid #d1d5db;
+    color: #1f2937;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.boton-estandar:hover {
+    background-color: #d1d5db;
+}
+
+/* NUEVA CLASE: Para los botones que van arriba en el visor (sin ancho 100%) */
+.boton-superior {
+    width: auto !important;
+    background-color: #374151; /* Tono oscuro elegante para el visor */
+    color: #ffffff;
+    border: 1px solid #4b5563;
+    padding: 4px 10px;
+    font-size: 11px;
+}
+
+.boton-superior:hover {
+    background-color: #2563eb;
+}
+
+.boton-guardar {
+    width: 100%;
+    background-color: #1d4ed8;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background-color 0.2s;
+}
+
+.boton-guardar:hover {
+    background-color: #1e40af;
+}
+
+.panel-contador {
+    background-color: #f9fafb;
+    border: 1px solid #d1d5db;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    display: flex;
+    justify-content: space-between;
+}

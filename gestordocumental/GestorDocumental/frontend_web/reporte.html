@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Gestión Documental - Reporte Diario</title>
+    <!-- Tailwind CSS para el diseño base -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Enlace a los estilos generales -->
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/buttons.css">
+</head>
+
+<body class="bg-gray-100 h-screen flex flex-col overflow-hidden text-xs">
+
+    <!-- Menú Superior Principal -->
+    <header class="bg-slate-800 text-white h-10 flex items-center justify-between px-6">
+        <div class="flex space-x-6">
+            <span class="font-bold text-white border-b-2 border-indigo-400 pb-0.5 cursor-pointer">Contratos</span>
+           
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-gray-300 text-[11px]">Admin (Henry)</span>
+            <div class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center font-bold text-xs">H</div>
+        </div>
+    </header>
+
+    <!-- Sub-barra de Navegación -->
+    <div class="bg-white border-b border-gray-300 px-6 py-1.5 flex items-center justify-between text-[11px]">
+        <div></div>
+        <div class="flex space-x-2 items-center justify-end">
+            <a href="index.html" class="boton-estandar cursor-pointer inline-block text-center no-underline">Regresar a Indexamiento</a>
+        </div>
+    </div>
+
+    <!-- Contenido Principal: Dos Columnas -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- Columna Izquierda: Menú Lateral -->
+        <aside class="w-80 bg-white border-r border-gray-300 flex flex-col overflow-y-auto p-3">
+            <div class="mb-3 bg-slate-100 border border-gray-300 rounded p-2 space-y-1">
+                <span id="menuBusqueda" class="block text-gray-800 hover:bg-slate-200 px-2 py-1 rounded cursor-pointer font-medium">Búsqueda</span>
+                <a href="index.html" id="menuIndexamiento" class="block text-gray-800 hover:bg-slate-200 px-2 py-1 rounded cursor-pointer font-medium no-underline">Indexamiento</a>
+                <span id="menuReportes" class="block text-blue-700 bg-blue-50 px-2 py-1 rounded cursor-pointer font-bold">Reportes</span>
+                <span id="menuSalir" class="block text-red-600 hover:bg-red-50 px-2 py-1 rounded cursor-pointer font-medium">Salir</span>
+            </div>
+        </aside>
+
+        <!-- Columna Derecha: Vista de Reportes -->
+        <main class="flex-1 bg-white flex flex-col p-6 overflow-auto">
+            <div class="flex items-center justify-between pb-4 border-b border-gray-300 mb-4">
+                <h2 class="text-base font-bold text-slate-800">Reporte Diario</h2>
+                <div class="space-x-2">
+                    <button class="bg-slate-800 text-white px-3 py-1 rounded text-xs hover:bg-slate-700 cursor-pointer">Generar Estructura HYCITE</button>
+                    <button class="bg-emerald-700 text-white px-3 py-1 rounded text-xs hover:bg-emerald-600 cursor-pointer">Generar Excel Reporte Diario</button>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3 mb-4 text-xs">
+                <label class="font-medium text-gray-700">Fecha De Procesamiento:</label>
+                <input type="date" value="" class="px-2 py-1 border border-gray-300 rounded bg-white">
+            </div>
+
+            <!-- Tabla de Reportes -->
+            <div class="border border-gray-300 rounded overflow-x-auto flex-1 bg-white">
+                <table class="w-full text-left border-collapse text-[11px]">
+                    <thead>
+                        <tr class="bg-slate-100 border-b border-gray-300 text-slate-700">
+                            <th class="p-2 border-r">Fecha de Proceso</th>
+                            <th class="p-2 border-r">Fecha de Contrato</th>
+                            <th class="p-2 border-r">No. de Distribuidor</th>
+                            <th class="p-2 border-r">No. de Folio</th>
+                            <th class="p-2 border-r">Cliente</th>
+                            <th class="p-2 border-r">Observaciones de hojas</th>
+                            <th class="p-2 border-r">Estado de hojas</th>
+                            <th class="p-2">Documentos recibidos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaReportesBody">
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="p-2 border-r"></td>
+                            <td class="p-2 border-r"></td>
+                            <td class="p-2 border-r"></td>
+                            <td class="p-2 border-r"></td>
+                            <td class="p-2 border-r"></td>
+                            <td class="p-2 border-r"></td>
+                            <td class="p-2 border-r"></td>
+                            <td class="p-2"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+
+    </div>
+
+</body>
+
+</html>

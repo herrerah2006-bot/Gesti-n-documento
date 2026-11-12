@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Gestión Documental - Control de Tiempos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/buttons.css">
+</head>
+
+<body class="bg-gray-100 h-screen flex flex-col overflow-hidden text-xs">
+
+    <!-- Menú Superior Principal -->
+    <header class="bg-slate-800 text-white h-10 flex items-center justify-between px-6">
+        <div class="flex space-x-6">
+            <span class="font-bold text-white border-b-2 border-indigo-400 pb-0.5 cursor-pointer">Contratos</span>
+            <span class="text-gray-300 hover:text-white transition cursor-pointer">Guías de Remisión</span>
+            <span class="text-gray-300 hover:text-white transition cursor-pointer">Comprobantes</span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-gray-300 text-[11px]">Admin (Henry)</span>
+            <div class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center font-bold text-xs">H</div>
+        </div>
+    </header>
+
+    <!-- Sub-barra de Navegación -->
+    <div class="bg-white border-b border-gray-300 px-6 py-1.5 flex items-center justify-between text-[11px]">
+        <div></div>
+        <div class="flex space-x-2 items-center justify-end">
+            <a href="index.html" class="boton-estandar cursor-pointer inline-block text-center no-underline">Regresar a Indexamiento</a>
+        </div>
+    </div>
+
+    <!-- Contenido Principal: Dos Columnas -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- Columna Izquierda: Menú Lateral -->
+        <aside class="flex bg-white border-r border-gray-300 overflow-y-auto">
+            <div class="w-36 bg-slate-100 border-r border-gray-300 p-2 space-y-1.5 flex flex-col text-[11px]">
+                <span class="font-bold text-gray-500 px-1 mb-1 text-[10px] uppercase">Menú</span>
+                <span id="menuBusqueda" class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium">Búsqueda</span>
+                <a href="index.html" class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium no-underline">Indexamiento</a>
+                <a href="reporte.html" class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium no-underline">Reportes</a>
+                <span class="block text-blue-700 bg-blue-50 px-2 py-1.5 rounded cursor-pointer font-bold">Control Tiempos</span>
+                <span id="menuSalir" class="block text-red-600 hover:bg-red-50 px-2 py-1.5 rounded cursor-pointer font-medium">Salir</span>
+            </div>
+        </aside>
+
+        <!-- Columna Derecha: Vista de Control de Tiempos -->
+        <main class="flex-1 bg-white flex flex-col p-6 overflow-auto">
+            <div class="flex items-center justify-between pb-4 border-b border-gray-300 mb-4">
+                <h2 class="text-base font-bold text-slate-800">Control de Tiempos y Producción</h2>
+                <div class="space-x-2">
+                    <button class="bg-emerald-700 text-white px-3 py-1 rounded text-xs hover:bg-emerald-600 cursor-pointer">Exportar Excel Control Tiempos</button>
+                </div>
+            </div>
+
+            <!-- Tabla Estilo Excel para Control de Horas -->
+            <div class="border border-gray-300 rounded overflow-x-auto flex-1 bg-white">
+                <table class="w-full text-left border-collapse text-[11px]">
+                    <thead>
+                        <tr class="bg-slate-100 border-b border-gray-300 text-slate-700 text-center">
+                            <th class="p-2 border-r">FECHA</th>
+                            <th class="p-2 border-r">CANTIDAD</th>
+                            <th class="p-2 border-r">HORA INICIO</th>
+                            <th class="p-2 border-r">HORA FIN</th>
+                            <th class="p-2 border-r">CANTIDAD</th>
+                            <th class="p-2 border-r">HORA INICIO</th>
+                            <th class="p-2 border-r">HORA FIN</th>
+                            <th class="p-2 border-r">HORAS POR...</th>
+                            <th class="p-2 border-r">HORAS POR...</th>
+                            <th class="p-2">TOTAL HORA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-gray-200 hover:bg-gray-50 text-center">
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+
+    </div>
+
+</body>
+
+</html>
