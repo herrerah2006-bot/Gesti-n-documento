@@ -15,10 +15,10 @@
     background-color: #d1d5db;
 }
 
-/* NUEVA CLASE: Para los botones que van arriba en el visor (sin ancho 100%) */
+
 .boton-superior {
     width: auto !important;
-    background-color: #374151; /* Tono oscuro elegante para el visor */
+    background-color: #374151; 
     color: #ffffff;
     border: 1px solid #4b5563;
     padding: 4px 10px;
@@ -73,10 +73,10 @@
     background-color: #d1d5db;
 }
 
-/* NUEVA CLASE: Para los botones que van arriba en el visor (sin ancho 100%) */
+
 .boton-superior {
     width: auto !important;
-    background-color: #374151; /* Tono oscuro elegante para el visor */
+    background-color: #374151; 
     color: #ffffff;
     border: 1px solid #4b5563;
     padding: 4px 10px;

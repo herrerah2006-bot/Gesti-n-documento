@@ -1,6 +1,4 @@
-// ========================================================== */
-// Lógica Interactiva para Elementos de Texto / Acciones      //
-// ========================================================== */
+
 
 let paginaActual = 1;
 const totalPaginas = 6;
@@ -8,7 +6,7 @@ let listaDeArchivos = [];
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    // 0. Inicializar o forzar el contador global "SI" limpiamente en 0 si no existe
+    
     let contadorSiActual = localStorage.getItem('contadorGlobalSi');
     if (contadorSiActual === null || isNaN(contadorSiActual) || parseInt(contadorSiActual) > 10000) {
         contadorSiActual = 0;
@@ -20,10 +18,10 @@ document.addEventListener("DOMContentLoaded", () => {
         spanSi.innerText = contadorSiActual;
     }
 
-    // 1. Renderizar la lista inicial de documentos (calcula automáticamente el contador "NO")
+    
     actualizarListaDocumentos();
 
-   // 2. Evento para "Contrato Indexado (ok)" (Superior y Panel) con validación estricta
+   
     const btnIndexadoSup = document.getElementById("btnIndexadoSuperior");
     const btnIndexadoPan = document.getElementById("btnIndexadoPanel");
 
@@ -31,13 +29,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (el) {
             el.addEventListener("click", () => {
                 
-                // REGLA 1: Verificar que realmente existan documentos en la lista (NO > 0)
+                
                 if (listaDeArchivos.length === 0) {
                     alert("⚠ Error: No hay documentos pendientes. El contador NO está en 0, debe importar un documento primero.");
                     return;
                 }
 
-                // REGLA 2: Verificar que todos los apartados de metadata estén llenos
+                
                 const fechaProceso = document.getElementById('fechaProceso').value.trim();
                 const fechaContrato = document.getElementById('fechaContrato').value.trim();
                 const nroDistribuidor = document.getElementById('nroDistribuidor').value.trim();
@@ -53,14 +51,32 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // REGLA 3: Si todo es correcto, el SI suma 1 y el NO baja 1 (removiendo el documento procesado)
+                
                 incrementarContadorSi();
 
-                // Tomamos el documento de la lista de pendientes y lo sacamos (el contador NO baja automáticamente)
+                
+                const datosContrato = {
+                    fechaProceso: fechaProceso,
+                    fechaContrato: fechaContrato,
+                    nroDistribuidor: nroDistribuidor,
+                    nroContrato: nroContrato,
+                    nombreCliente: nombreCliente,
+                    observaciones: observaciones,
+                    nombreEmpresa: nombreEmpresa,
+                    codigoEmpresa: codigoEmpresa,
+                    areaEmpresa: areaEmpresa,
+                    fechaRegistro: new Date().toLocaleString()
+                };
+
+                let registrosGuardados = JSON.parse(localStorage.getItem("contratos_indexados")) || [];
+                registrosGuardados.push(datosContrato);
+                localStorage.setItem("contratos_indexados", JSON.stringify(registrosGuardados));
+
+                
                 listaDeArchivos.shift();
                 actualizarListaDocumentos();
 
-                // Limpiar visor si ya no quedan documentos
+                
                 if (listaDeArchivos.length === 0) {
                     const tituloVisor = document.getElementById("nombreDocumentoVisor");
                     const lienzoVisor = document.getElementById("contenedorLienzoVisor");
@@ -69,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         lienzoVisor.innerHTML = `
                             <div class="bg-white shadow-2xl border border-gray-400 p-8 max-w-xl w-full text-center rounded">
                                 <div class="border-2 border-dashed border-indigo-300 p-16 rounded bg-indigo-50/50">
-                                    <p class="text-indigo-900 font-bold mb-1">📄 Sin documento seleccionado</p>
+                                    <p class="text-indigo-900 font-bold mb-1">Sin documento seleccionado</p>
                                     <p class="text-xs text-gray-500">Todos los documentos pendientes han sido procesados.</p>
                                 </div>
                             </div>
@@ -77,12 +93,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
 
-                alert("✔ ¡Contrato indexado con éxito! Se restó 1 al contador NO y se sumó 1 al contador SI.");
+                alert("✔ ¡Contrato indexado y guardado automáticamente con éxito! Se restó 1 al contador NO y se sumó 1 al contador SI.");
             });
         }
     });
 
-    // 3. Importar documentos escaneados (Abre el explorador de archivos de la PC)
+    
     const btnImportar = document.getElementById("btnImportar");
     const inputArchivoPdf = document.getElementById("inputArchivoPdf");
 
@@ -103,13 +119,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 4. Guardar registro en MySQL (Solo guarda y procesa la lista, YA NO TOCA EL CONTADOR "SI")
+    
     const btnGuardar = document.getElementById("btnGuardar");
     if (btnGuardar) {
         btnGuardar.addEventListener("click", guardarMetadataEnServidor);
     }
 
-    // 5. Navegación del visor (⟨ / ⟩)
+    
     const btnAnterior = document.getElementById("btnAnterior");
     const btnSiguiente = document.getElementById("btnSiguiente");
 
@@ -130,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Función estricta para incrementar el contador "SI" exactamente de 1 en 1
+
 function incrementarContadorSi() {
     let contadorSiActual = localStorage.getItem('contadorGlobalSi');
 
@@ -148,14 +164,14 @@ function incrementarContadorSi() {
     }
 }
 
-// Función para renderizar la lista lateral de documentos y actualizar el contador NO automáticamente
+
 function actualizarListaDocumentos() {
     const contenedor = document.getElementById("listaDocumentos");
     if (!contenedor) return;
 
     contenedor.innerHTML = "";
 
-    // Actualiza dinámicamente el contador "NO" según la cantidad de documentos en la lista
+    
     const contadorNoEl = document.getElementById("contadorNo");
     if (contadorNoEl) {
         contadorNoEl.innerText = listaDeArchivos.length;
@@ -187,7 +203,7 @@ function actualizarListaDocumentos() {
     });
 }
 
-// Cargar documento en el visor principal
+
 function mostrarEnVisor(doc) {
     const tituloVisor = document.getElementById("nombreDocumentoVisor");
     const lienzoVisor = document.getElementById("contenedorLienzoVisor");
@@ -202,7 +218,7 @@ function mostrarEnVisor(doc) {
         } else {
             lienzoVisor.innerHTML = `
                 <div class="bg-white p-8 border rounded shadow-md text-center max-w-md">
-                    <p class="font-bold text-slate-800 mb-2">📄 ${doc.nombre}</p>
+                    <p class="font-bold text-slate-800 mb-2">${doc.nombre}</p>
                     <p class="text-xs text-gray-500">Documento cargado en el visor.</p>
                 </div>
             `;
@@ -210,7 +226,7 @@ function mostrarEnVisor(doc) {
     }
 }
 
-// Actualizar contador del visor de páginas
+
 function actualizarVisorPagina() {
     const indicador = document.getElementById("indicadorPagina");
     if (indicador) {
@@ -218,7 +234,7 @@ function actualizarVisorPagina() {
     }
 }
 
-// Conexión con el servidor Java para guardar en MySQL (sin tocar el contador "SI")
+
 function guardarMetadataEnServidor() {
     const data = {
         fechaProceso: document.getElementById('fechaProceso').value,
@@ -241,7 +257,7 @@ function guardarMetadataEnServidor() {
     .then(response => {
         alert("¡Registro guardado en MySQL con éxito!");
 
-        // Si se guardó con éxito, avanzamos en la lista de archivos pendientes
+        
         if (listaDeArchivos.length > 0) {
             listaDeArchivos.shift();
             actualizarListaDocumentos();

@@ -16,7 +16,7 @@ public class ServidorWeb {
         int puerto = 8080;
         HttpServer servidor = HttpServer.create(new InetSocketAddress(puerto), 0);
         
-        // Endpoint que escucha las peticiones de indexación de la web
+        
         servidor.createContext("/api/clientes", new IndexacionHandler());
         
         servidor.setExecutor(null);
@@ -30,7 +30,6 @@ public class ServidorWeb {
     static class IndexacionHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            // 1. Cabeceras CORS para permitir la comunicación con la interfaz web
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
             exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
@@ -55,12 +54,6 @@ public class ServidorWeb {
                 System.out.println(" ¡Datos de Metadata recibidos en Java!");
                 System.out.println(jsonRecibido);
                 System.out.println("----------------------------------------");
-
-                // TODO: Aquí puedes utilizar tu ClienteDao o un nuevo DocumentoDao para insertar 
-                // los datos procesados en tus tablas de MySQL.
-                // Ejemplo:
-                // DocumentoDao docDao = new DocumentoDao();
-                // docDao.guardarIndexacion(jsonRecibido);
 
                 String respuestaJson = "{\"status\": \"success\", \"message\": \"Documento indexado y guardado en MySQL con éxito\"}";
                 

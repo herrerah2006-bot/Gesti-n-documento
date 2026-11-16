@@ -5,16 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centro de Gestión Documental - Indexación</title>
-    <!-- Tailwind CSS para el diseño base -->
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Enlace a los estilos generales y a la clase de botones -->
+    
     <link rel="stylesheet" href="css/estilos.css">
     <link rel="stylesheet" href="css/buttons.css">
 </head>
 
 <body class="bg-gray-100 h-screen flex flex-col overflow-hidden text-xs">
 
-    <!-- Menú Superior Principal -->
+   
     <header class="bg-slate-800 text-white h-10 flex items-center justify-between px-6">
         <div class="flex space-x-6">
             <span class="font-bold text-white border-b-2 border-indigo-400 pb-0.5 cursor-pointer">Contratos</span>
@@ -26,12 +26,12 @@
         </div>
     </header>
 
-    <!-- Sub-barra de Navegación y Acciones (Alineado a la derecha) -->
+    
     <div class="bg-white border-b border-gray-300 px-6 py-1.5 flex items-center justify-between text-[11px]">
-        <!-- Contenedor vacío a la izquierda para equilibrar -->
+        
         <div></div>
 
-        <!-- Contenedor alineado a la derecha -->
+        
         <div class="flex space-x-2 items-center justify-end">
             <span id="btnIndexadoSuperior" class="boton-estandar cursor-pointer inline-block text-center">Contrato
                 Indexado (ok)</span>
@@ -41,31 +41,37 @@
         </div>
     </div>
 
-    <!-- Contenido Principal: Dos Columnas -->
+    
     <div class="flex-1 flex overflow-hidden">
 
-        <!-- Contenedor Lateral Izquierdo Dividido en Dos Columnas (Navegación + Documentos/Metadata) -->
+        
         <aside class="flex bg-white border-r border-gray-300 overflow-y-auto">
 
-            <!-- 1. Columna Estrecha de Navegación (Nave) -->
+            
             <div class="w-36 bg-slate-100 border-r border-gray-300 p-2 space-y-1.5 flex flex-col text-[11px]">
                 <span class="font-bold text-gray-500 px-1 mb-1 text-[10px] uppercase">Menú</span>
-                <span id="menuBusqueda" class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium">Búsqueda</span>
-                <span id="menuIndexamiento" class="block text-blue-700 bg-blue-50 px-2 py-1.5 rounded cursor-pointer font-bold">Indexamiento</span>
-                <a href="reporte.html" id="menuReportes" class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium no-underline">Reportes</a>
-                <a href="control-tiempos.html" id="menuControlTiempos" class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium no-underline">Control Tiempos</a>
-                <span id="menuSalir" class="block text-red-600 hover:bg-red-50 px-2 py-1.5 rounded cursor-pointer font-medium">Salir</span>
+                <span id="menuBusqueda"
+                    class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium">Búsqueda</span>
+                <span id="menuIndexamiento"
+                    class="block text-blue-700 bg-blue-50 px-2 py-1.5 rounded cursor-pointer font-bold">Indexamiento</span>
+                <a href="reporte.html" id="menuReportes"
+                    class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium no-underline">Reportes</a>
+                <a href="control-tiempos.html" id="menuControlTiempos"
+                    class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium no-underline">Control
+                    Tiempos</a>
+                <span id="menuSalir"
+                    class="block text-red-600 hover:bg-red-50 px-2 py-1.5 rounded cursor-pointer font-medium">Salir</span>
             </div>
 
-            <!-- 2. Columna Principal de Documentos y Metadata (Documentos) -->
+            
             <div class="w-80 p-3 space-y-2 flex flex-col">
-                <!-- Lista de Documentos Escaneados Pendientes -->
+                
                 <div class="bg-black text-white p-1.5 rounded">
                     <p class="font-bold text-[11px] mb-0.5">Documentos</p>
                     <div id="listaDocumentos" class="text-[10px] text-blue-300 space-y-0.5"></div>
                 </div>
 
-                <!-- Encabezado de Metadata -->
+                
                 <div class="bg-black text-white font-bold p-1 text-center text-[11px]">Metadata</div>
 
                 <form id="formIndexacion" class="space-y-1.5 text-[11px]">
@@ -134,11 +140,11 @@
                         <label class="font-medium text-gray-700 w-2/5">Área Empresa:</label>
                         <select id="areaEmpresa"
                             class="w-3/5 px-2 py-0.5 border border-gray-300 rounded bg-white font-medium focus:ring-1 focus:ring-blue-500">
-                       
+
                         </select>
                     </div>
 
-                    <!-- Controles laterales en texto plano -->
+                    
                     <div class="pt-2 border-t mt-2 space-y-1.5">
                         <span id="btnIndexadoPanel" class="boton-estandar block text-center cursor-pointer">
                             Contrato Indexado (ok)
@@ -149,16 +155,14 @@
                             <span class="text-blue-600 font-bold">▶ SI: <span id="contadorSi">0</span></span>
                         </div>
 
-                        <span id="btnGuardar" class="boton-guardar block text-center cursor-pointer">
-                            Guardar Registro en MySQL
-                        </span>
+                        
                     </div>
                 </form>
             </div>
 
         </aside>
 
-        <!-- Columna Derecha: Visor DigitalTeam VIEWER -->
+        
         <main class="flex-1 bg-slate-200 flex flex-col">
             <div class="bg-slate-900 text-white h-10 px-4 flex items-center justify-between text-xs">
                 <div class="flex items-center space-x-2">
@@ -190,7 +194,7 @@
 
     </div>
 
-    <!-- Enlaces a los scripts JS separados -->
+    
     <script src="js/botones.js"></script>
     <script src="js/script.js"></script>
 </body>

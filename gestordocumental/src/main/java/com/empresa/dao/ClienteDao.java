@@ -8,7 +8,7 @@ import java.sql.SQLException;
 
 public class ClienteDao {
 
-    // Método para insertar un cliente en la base de datos
+    
     public boolean insertarCliente(Cliente cliente) {
         String sql = "INSERT INTO clientes (cedula_ruc, cliente_nombre) VALUES (?, ?)";
         

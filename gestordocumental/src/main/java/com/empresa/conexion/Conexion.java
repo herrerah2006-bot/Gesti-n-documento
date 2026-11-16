@@ -1,4 +1,4 @@
-package com.empresa.conexion; // Asegúrate de ajustar el nombre del paquete según tu estructura
+package com.empresa.conexion; 
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class Conexion {
     private static final String URL = "jdbc:mysql://localhost:3306/db_documentos_inteligente?useSSL=false&serverTimezone=UTC";
     private static final String USUARIO = "root";
-    private static final String CLAVE = "12345678"; // Reemplaza esto con tu contraseña real de MySQL
+    private static final String CLAVE = "12345678"; 
 
     public static Connection obtenerConexion() {
         try {
