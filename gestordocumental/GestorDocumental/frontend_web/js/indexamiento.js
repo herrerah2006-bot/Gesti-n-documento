@@ -1,11 +1,8 @@
-
-
 let paginaActual = 1;
 const totalPaginas = 6;
 let listaDeArchivos = [];
 
 document.addEventListener("DOMContentLoaded", () => {
-
     
     let contadorSiActual = localStorage.getItem('contadorGlobalSi');
     if (contadorSiActual === null || isNaN(contadorSiActual) || parseInt(contadorSiActual) > 10000) {
@@ -19,34 +16,54 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     
+    const archivosGuardados = localStorage.getItem("lista_de_archivos_sesion");
+    if (archivosGuardados) {
+        try {
+            listaDeArchivos = JSON.parse(archivosGuardados);
+        } catch (e) {
+            listaDeArchivos = [];
+        }
+    }
+
+    
+    const inputsForm = document.querySelectorAll("#formIndexacion input, #formIndexacion textarea, input[id*='fecha'], input[id*='nro'], input[id*='nombre'], input[id*='observaciones'], input[id*='codigo'], input[id*='area']");
+    inputsForm.forEach(input => {
+        if (!input.id) return;
+        const valorGuardado = localStorage.getItem("borrador_" + input.id);
+        if (valorGuardado) {
+            input.value = valorGuardado;
+        }
+        input.addEventListener("input", () => {
+            localStorage.setItem("borrador_" + input.id, input.value);
+        });
+    });
+
     actualizarListaDocumentos();
 
-   
+    // 3. BOTONES DE INDEXACIÓN (SUPERIOR Y PANEL)
     const btnIndexadoSup = document.getElementById("btnIndexadoSuperior");
     const btnIndexadoPan = document.getElementById("btnIndexadoPanel");
 
     [btnIndexadoSup, btnIndexadoPan].forEach(el => {
         if (el) {
             el.addEventListener("click", () => {
-                
-                
+                // Validación estricta con la lista real sincronizada
                 if (listaDeArchivos.length === 0) {
                     alert("⚠ Error: No hay documentos pendientes. El contador NO está en 0, debe importar un documento primero.");
                     return;
                 }
 
-                
-                const fechaProceso = document.getElementById('fechaProceso').value.trim();
-                const fechaContrato = document.getElementById('fechaContrato').value.trim();
-                const nroDistribuidor = document.getElementById('nroDistribuidor').value.trim();
-                const nroContrato = document.getElementById('nroContrato').value.trim();
-                const nombreCliente = document.getElementById('nombreCliente').value.trim();
-                const observaciones = document.getElementById('observaciones').value.trim();
-                const nombreEmpresa = document.getElementById('nombreEmpresa').value.trim();
-                const codigoEmpresa = document.getElementById('codigoEmpresa').value.trim();
-                const areaEmpresa = document.getElementById('areaEmpresa').value.trim();
+                const fechaProceso = document.getElementById('fechaProceso')?.value.trim() || "";
+                const fechaContrato = document.getElementById('fechaContrato')?.value.trim() || "";
+                const nroDistribuidor = document.getElementById('nroDistribuidor')?.value.trim() || "";
+                const nroContrato = document.getElementById('nroContrato')?.value.trim() || "";
+                const nombreCliente = document.getElementById('nombreCliente')?.value.trim() || "";
+                const observaciones = document.getElementById('observaciones')?.value.trim() || document.getElementById('obsHojas')?.value.trim() || "";
+                const nombreEmpresa = document.getElementById('nombreEmpresa')?.value.trim() || "";
+                const codigoEmpresa = document.getElementById('codigoEmpresa')?.value.trim() || "";
+                const areaEmpresa = document.getElementById('areaEmpresa')?.value.trim() || "";
 
-                if (!fechaProceso || !fechaContrato || !nroDistribuidor || !nroContrato || !nombreCliente || !observaciones || !nombreEmpresa || !codigoEmpresa || !areaEmpresa) {
+                if (!fechaProceso || !fechaContrato || !nroDistribuidor || !nroContrato || !nombreCliente || !nombreEmpresa || !codigoEmpresa || !areaEmpresa) {
                     alert("⚠ Error: Todos los apartados y campos de la metadata deben estar llenos antes de indexar el contrato.");
                     return;
                 }
@@ -56,15 +73,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 
                 const datosContrato = {
-                    fechaProceso: fechaProceso,
-                    fechaContrato: fechaContrato,
-                    nroDistribuidor: nroDistribuidor,
-                    nroContrato: nroContrato,
-                    nombreCliente: nombreCliente,
-                    observaciones: observaciones,
-                    nombreEmpresa: nombreEmpresa,
-                    codigoEmpresa: codigoEmpresa,
-                    areaEmpresa: areaEmpresa,
+                    fechaProceso,
+                    fechaContrato,
+                    nroDistribuidor,
+                    nroContrato,
+                    nombreCliente,
+                    observaciones,
+                    nombreEmpresa,
+                    codigoEmpresa,
+                    areaEmpresa,
                     fechaRegistro: new Date().toLocaleString()
                 };
 
@@ -74,24 +91,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 
                 listaDeArchivos.shift();
+                localStorage.setItem("lista_de_archivos_sesion", JSON.stringify(listaDeArchivos));
                 actualizarListaDocumentos();
 
                 
-                if (listaDeArchivos.length === 0) {
-                    const tituloVisor = document.getElementById("nombreDocumentoVisor");
-                    const lienzoVisor = document.getElementById("contenedorLienzoVisor");
-                    if (tituloVisor) tituloVisor.innerText = "Seleccione un documento";
-                    if (lienzoVisor) {
-                        lienzoVisor.innerHTML = `
-                            <div class="bg-white shadow-2xl border border-gray-400 p-8 max-w-xl w-full text-center rounded">
-                                <div class="border-2 border-dashed border-indigo-300 p-16 rounded bg-indigo-50/50">
-                                    <p class="text-indigo-900 font-bold mb-1">Sin documento seleccionado</p>
-                                    <p class="text-xs text-gray-500">Todos los documentos pendientes han sido procesados.</p>
-                                </div>
-                            </div>
-                        `;
-                    }
-                }
+                limpiarBorradorFormulario();
 
                 alert("✔ ¡Contrato indexado y guardado automáticamente con éxito! Se restó 1 al contador NO y se sumó 1 al contador SI.");
             });
@@ -110,11 +114,17 @@ document.addEventListener("DOMContentLoaded", () => {
         inputArchivoPdf.addEventListener("change", (e) => {
             const archivo = e.target.files[0];
             if (archivo) {
-                const urlLocal = URL.createObjectURL(archivo);
-                const nuevoDoc = { nombre: archivo.name, url: urlLocal };
-                listaDeArchivos.push(nuevoDoc);
-                actualizarListaDocumentos();
-                mostrarEnVisor(nuevoDoc);
+                const lector = new FileReader();
+                lector.onload = function(evento) {
+                    const base64Data = evento.target.result;
+                    const nuevoDoc = { nombre: archivo.name, url: base64Data };
+                    listaDeArchivos.push(nuevoDoc);
+                    localStorage.setItem("lista_de_archivos_sesion", JSON.stringify(listaDeArchivos));
+                    
+                    actualizarListaDocumentos();
+                    mostrarEnVisor(nuevoDoc);
+                };
+                lector.readAsDataURL(archivo);
             }
         });
     }
@@ -144,18 +154,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    
+    if (listaDeArchivos.length > 0) {
+        mostrarEnVisor(listaDeArchivos[0]);
+    }
 });
 
 
 function incrementarContadorSi() {
     let contadorSiActual = localStorage.getItem('contadorGlobalSi');
-
     if (contadorSiActual === null || isNaN(contadorSiActual)) {
         contadorSiActual = 0;
     } else {
         contadorSiActual = parseInt(contadorSiActual) + 1;
     }
-
     localStorage.setItem('contadorGlobalSi', contadorSiActual);
     
     const spanSi = document.getElementById("contadorSi");
@@ -171,10 +184,26 @@ function actualizarListaDocumentos() {
 
     contenedor.innerHTML = "";
 
-    
     const contadorNoEl = document.getElementById("contadorNo");
     if (contadorNoEl) {
         contadorNoEl.innerText = listaDeArchivos.length;
+    }
+
+    if (listaDeArchivos.length === 0) {
+        const tituloVisor = document.getElementById("nombreDocumentoVisor");
+        const lienzoVisor = document.getElementById("contenedorLienzoVisor");
+        if (tituloVisor) tituloVisor.innerText = "Seleccione un documento";
+        if (lienzoVisor) {
+            lienzoVisor.innerHTML = `
+                <div class="bg-white shadow-2xl border border-gray-400 p-8 max-w-xl w-full text-center rounded">
+                    <div class="border-2 border-dashed border-indigo-300 p-16 rounded bg-indigo-50/50">
+                        <p class="text-indigo-900 font-bold mb-1">Sin documento seleccionado</p>
+                        <p class="text-xs text-gray-500">Todos los documentos pendientes han sido procesados.</p>
+                    </div>
+                </div>
+            `;
+        }
+        return;
     }
 
     listaDeArchivos.forEach((doc, index) => {
@@ -237,15 +266,15 @@ function actualizarVisorPagina() {
 
 function guardarMetadataEnServidor() {
     const data = {
-        fechaProceso: document.getElementById('fechaProceso').value,
-        fechaContrato: document.getElementById('fechaContrato').value,
-        nroDistribuidor: document.getElementById('nroDistribuidor').value,
-        nroContrato: document.getElementById('nroContrato').value,
-        nombreCliente: document.getElementById('nombreCliente').value,
-        observaciones: document.getElementById('observaciones').value,
-        nombreEmpresa: document.getElementById('nombreEmpresa').value,
-        codigoEmpresa: document.getElementById('codigoEmpresa').value,
-        areaEmpresa: document.getElementById('areaEmpresa').value
+        fechaProceso: document.getElementById('fechaProceso')?.value || '',
+        fechaContrato: document.getElementById('fechaContrato')?.value || '',
+        nroDistribuidor: document.getElementById('nroDistribuidor')?.value || '',
+        nroContrato: document.getElementById('nroContrato')?.value || '',
+        nombreCliente: document.getElementById('nombreCliente')?.value || '',
+        observaciones: document.getElementById('observaciones')?.value || '',
+        nombreEmpresa: document.getElementById('nombreEmpresa')?.value || '',
+        codigoEmpresa: document.getElementById('codigoEmpresa')?.value || '',
+        areaEmpresa: document.getElementById('areaEmpresa')?.value || ''
     };
 
     fetch('http://localhost:8080/api/clientes', {
@@ -257,14 +286,24 @@ function guardarMetadataEnServidor() {
     .then(response => {
         alert("¡Registro guardado en MySQL con éxito!");
 
-        
         if (listaDeArchivos.length > 0) {
             listaDeArchivos.shift();
+            localStorage.setItem("lista_de_archivos_sesion", JSON.stringify(listaDeArchivos));
             actualizarListaDocumentos();
         }
     })
     .catch(err => {
         console.error("Error de conexión:", err);
         alert("Error: No se pudo conectar con el servidor Java en el puerto 8080.");
+    });
+}
+
+
+function limpiarBorradorFormulario() {
+    const inputsForm = document.querySelectorAll("#formIndexacion input, #formIndexacion textarea, input[id*='fecha'], input[id*='nro'], input[id*='nombre'], input[id*='observaciones'], input[id*='codigo'], input[id*='area']");
+    inputsForm.forEach(input => {
+        if (!input.id) return;
+        localStorage.removeItem("borrador_" + input.id);
+        input.value = "";
     });
 }

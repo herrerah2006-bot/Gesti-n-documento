@@ -12,11 +12,11 @@
 
 <body class="bg-gray-100 h-screen flex flex-col overflow-hidden text-xs">
 
-    
+
     <header class="bg-slate-800 text-white h-10 flex items-center justify-between px-6">
         <div class="flex space-x-6">
             <span class="font-bold text-white border-b-2 border-indigo-400 pb-0.5 cursor-pointer">Contratos</span>
-           
+
         </div>
         <div class="flex items-center space-x-4">
             <span class="text-gray-300 text-[11px]">Admin (Henry)</span>
@@ -24,44 +24,41 @@
         </div>
     </header>
 
-    
+
     <div class="bg-white border-b border-gray-300 px-6 py-1.5 flex items-center justify-between text-[11px]">
         <div></div>
         <div class="flex space-x-2 items-center justify-end">
-            <a href="index.html" class="boton-estandar cursor-pointer inline-block text-center no-underline">Regresar a Indexamiento</a>
+            <a href="index.html" class="boton-estandar cursor-pointer inline-block text-center no-underline">Regresar a
+                Indexamiento</a>
         </div>
     </div>
 
-    
+
     <div class="flex-1 flex overflow-hidden">
 
-        
-        <aside class="flex bg-white border-r border-gray-300 overflow-y-auto">
-            <div class="w-36 bg-slate-100 border-r border-gray-300 p-2 space-y-1.5 flex flex-col text-[11px]">
-                <span class="font-bold text-gray-500 px-1 mb-1 text-[10px] uppercase">Menú</span>
-                <span id="menuBusqueda" class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium">Búsqueda</span>
-                <a href="index.html" class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium no-underline">Indexamiento</a>
-                <a href="reporte.html" class="block text-gray-800 hover:bg-slate-200 px-2 py-1.5 rounded cursor-pointer font-medium no-underline">Reportes</a>
-                <span class="block text-blue-700 bg-blue-50 px-2 py-1.5 rounded cursor-pointer font-bold">Control Tiempos</span>
-                <span id="menuSalir" class="block text-red-600 hover:bg-red-50 px-2 py-1.5 rounded cursor-pointer font-medium">Salir</span>
-            </div>
+
+
+        <aside class="flex bg-white border-r border-gray-300 overflow-y-auto" id="nav-container">
+
         </aside>
 
-        
+
         <main class="flex-1 bg-white flex flex-col p-6 overflow-auto">
             <div class="flex items-center justify-between pb-4 border-b border-gray-300 mb-4">
                 <h2 class="text-base font-bold text-slate-800">Control de Tiempos y Producción</h2>
                 <div class="space-x-2">
-                    <button class="bg-emerald-700 text-white px-3 py-1 rounded text-xs hover:bg-emerald-600 cursor-pointer">Exportar Excel Control Tiempos</button>
+                    <button
+                        class="bg-emerald-700 text-white px-3 py-1 rounded text-xs hover:bg-emerald-600 cursor-pointer">Exportar
+                        Excel Control Tiempos</button>
                 </div>
             </div>
 
-            
+
             <div class="border border-gray-300 rounded overflow-x-auto flex-1 bg-white">
                 <table class="w-full text-left border-collapse text-[11px]">
                     <thead>
                         <tr class="bg-slate-100 border-b border-gray-300 text-slate-700 text-center">
-                            <th class="p-2 border-r">FECHA</th>
+                            <th class="p-2 border-r">FECHA / TURNO</th>
                             <th class="p-2 border-r">CANTIDAD</th>
                             <th class="p-2 border-r">HORA INICIO</th>
                             <th class="p-2 border-r">HORA FIN</th>
@@ -70,11 +67,12 @@
                             <th class="p-2 border-r">HORA FIN</th>
                             <th class="p-2 border-r">HORAS POR...</th>
                             <th class="p-2 border-r">HORAS POR...</th>
-                            <th class="p-2">TOTAL HORA</th>
+                            <th class="p-2">TOTAL HORA </th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tablaTiemposBody">
                         <tr class="border-b border-gray-200 hover:bg-gray-50 text-center">
+                            <td colspan="10" class="p-4 text-center text-gray-500">Cargando registros de producción...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -83,6 +81,73 @@
 
     </div>
 
+
+   <script src="js/nav.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const tbody = document.getElementById("tablaTiemposBody");
+            if (!tbody) return;
+
+            const cortes = JSON.parse(localStorage.getItem("control_tiempos")) || [];
+            tbody.innerHTML = "";
+
+            if (cortes.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="p-4 text-center text-gray-500">No hay cortes registrados todavía. Comience a indexar contratos.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            
+            let registrosPorFecha = {};
+
+            cortes.forEach(corte => {
+                let fechaLimpia = corte.fechaTurno ? corte.fechaTurno.split(' - ')[0] : "16/11/2026";
+                let turno = corte.turno || (corte.fechaTurno && corte.fechaTurno.includes('PM') ? 'PM' : 'AM');
+
+                if (!registrosPorFecha[fechaLimpia]) {
+                    registrosPorFecha[fechaLimpia] = { am: 0, pm: 0, folios: 0 };
+                }
+
+                if (turno === 'AM') {
+                    registrosPorFecha[fechaLimpia].am += (corte.totalContratos || 1);
+                } else {
+                    registrosPorFecha[fechaLimpia].pm += (corte.totalContratos || 1);
+                }
+                registrosPorFecha[fechaLimpia].folios += (corte.cantidadFolios || 1);
+            });
+
+            tbody.innerHTML = "";
+
+            
+            Object.keys(registrosPorFecha).forEach(fecha => {
+                let datos = registrosPorFecha[fecha];
+                
+                let cantidadPm = datos.pm > 0 ? datos.pm : (datos.am > 1 ? datos.am : 1);
+                let totalSuma = 1 + cantidadPm; 
+
+                const fila = document.createElement("tr");
+                fila.className = "border-b border-gray-200 hover:bg-gray-50 text-center";
+
+                fila.innerHTML = `
+                    <td class="p-2 border-r font-bold">${fecha}</td>
+                    <td class="p-2 border-r font-semibold">1</td>
+                    <td class="p-2 border-r">10:00 a. m.</td>
+                    <td class="p-2 border-r">11:30 a. m.</td>
+                    <td class="p-2 border-r font-semibold text-blue-700">${cantidadPm}</td>
+                    <td class="p-2 border-r">11:00 a. m.</td>
+                    <td class="p-2 border-r">17:00 p. m.</td>
+                    <td class="p-2 border-r">2:00</td>
+                    <td class="p-2 border-r">6:00</td>
+                    <td class="p-2 font-bold text-slate-800">${totalSuma} Contratos</td>
+                `;
+
+                tbody.appendChild(fila);
+            });
+        });
+    </script>
 </body>
 
 </html>
