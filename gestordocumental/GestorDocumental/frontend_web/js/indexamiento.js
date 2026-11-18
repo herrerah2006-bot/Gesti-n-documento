@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     actualizarListaDocumentos();
 
-    // 3. BOTONES DE INDEXACIÓN (SUPERIOR Y PANEL)
+   // 3. BOTONES DE INDEXACIÓN (SUPERIOR Y PANEL)
     const btnIndexadoSup = document.getElementById("btnIndexadoSuperior");
     const btnIndexadoPan = document.getElementById("btnIndexadoPanel");
 
@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
             el.addEventListener("click", () => {
                 // Validación estricta con la lista real sincronizada
                 if (listaDeArchivos.length === 0) {
-                    alert("⚠ Error: No hay documentos pendientes. El contador NO está en 0, debe importar un documento primero.");
+                    alert("⚠ Error: No hay documentos pendientes. Debe importar un documento primero.");
                     return;
                 }
 
@@ -68,10 +68,27 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                
+                // 1. DESCARGAR AUTOMÁTICAMENTE EL PDF A LA PC
+                if (listaDeArchivos.length > 0) {
+                    try {
+                        const docActual = listaDeArchivos[0];
+                        const linkDescarga = document.createElement('a');
+                        linkDescarga.href = docActual.url;
+                        linkDescarga.download = `Contrato_${nroContrato}_${nombreCliente}.pdf`;
+                        document.body.appendChild(linkDescarga);
+                        linkDescarga.click();
+                        document.body.removeChild(linkDescarga);
+                    } catch (err) {
+                        console.error("Error al descargar el PDF:", err);
+                    }
+                }
+
+                // 2. Enviar la metadata al servidor Java y MySQL
+                guardarMetadataEnServidor();
+
+                // 3. Incrementar contadores y control de tiempos
                 incrementarContadorSi();
 
-                
                 const datosContrato = {
                     fechaProceso,
                     fechaContrato,
@@ -89,15 +106,40 @@ document.addEventListener("DOMContentLoaded", () => {
                 registrosGuardados.push(datosContrato);
                 localStorage.setItem("contratos_indexados", JSON.stringify(registrosGuardados));
 
+                // Actualizar control de tiempos para hoy
+                let hoy = new Date();
+                let dia = String(hoy.getDate()).padStart(2, '0');
+                let mes = String(hoy.getMonth() + 1).padStart(2, '0');
+                let anio = hoy.getFullYear();
+                let fechaActualStr = `${dia}/${mes}/${anio}`;
+
+                let controlTiempos = JSON.parse(localStorage.getItem("control_tiempos")) || [];
+                let registroHoy = controlTiempos.find(c => c.fechaTurno && c.fechaTurno.includes(fechaActualStr));
                 
+                if (registroHoy) {
+                    registroHoy.totalContratos = (registroHoy.totalContratos || 0) + 1;
+                    registroHoy.cantidadFolios = registroHoy.totalContratos;
+                } else {
+                    controlTiempos.push({
+                        fechaTurno: fechaActualStr + " - PM",
+                        turno: "PM",
+                        totalContratos: 1,
+                        cantidadFolios: 1
+                    });
+                }
+                localStorage.setItem("control_tiempos", JSON.stringify(controlTiempos));
+
+                // 4. Mover la lista de archivos, actualizar DOM y vaciar casillas/borradores
                 listaDeArchivos.shift();
                 localStorage.setItem("lista_de_archivos_sesion", JSON.stringify(listaDeArchivos));
                 actualizarListaDocumentos();
-
-                
                 limpiarBorradorFormulario();
 
-                alert("✔ ¡Contrato indexado y guardado automáticamente con éxito! Se restó 1 al contador NO y se sumó 1 al contador SI.");
+                // Limpiar explícitamente los inputs visuales del formulario
+                const inputsForm = document.querySelectorAll("#formIndexacion input, #formIndexacion textarea");
+                inputsForm.forEach(input => { input.value = ""; });
+
+                alert("✔ ¡Contrato indexado, PDF descargado a la PC y enviado a MySQL con éxito!");
             });
         }
     });
@@ -284,13 +326,7 @@ function guardarMetadataEnServidor() {
     })
     .then(res => res.json())
     .then(response => {
-        alert("¡Registro guardado en MySQL con éxito!");
-
-        if (listaDeArchivos.length > 0) {
-            listaDeArchivos.shift();
-            localStorage.setItem("lista_de_archivos_sesion", JSON.stringify(listaDeArchivos));
-            actualizarListaDocumentos();
-        }
+        // Opcional: puedes dejar la notificación aquí o dejar solo la del botón principal
     })
     .catch(err => {
         console.error("Error de conexión:", err);

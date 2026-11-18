@@ -39,7 +39,7 @@ public class ServidorWeb {
                 return;
             }
 
-            // 2. Procesar la petición POST enviada desde el botón "Guardar Registro"
+            
             if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
                 InputStreamReader isr = new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8);
                 BufferedReader br = new BufferedReader(isr);
