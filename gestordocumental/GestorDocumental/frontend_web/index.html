@@ -71,9 +71,21 @@
 
                     <div class="flex items-center justify-between">
                         <label class="font-medium text-gray-700 w-2/5">Fecha de Procesamiento:</label>
-                        <input type="date" id="fechaProceso" value=""
-                            class="w-3/5 px-2 py-0.5 border border-gray-300 rounded bg-white">
+                        <input type="date" id="fechaProceso" readonly
+                            class="w-3/5 px-2 py-0.5 border border-gray-300 rounded bg-gray-100 cursor-not-allowed">
                     </div>
+
+                    <!-- Script rápido justo debajo para llenarlo con la fecha actual de la PC -->
+                    <script>
+                        const inputFP = document.getElementById('fechaProceso');
+                        if (inputFP) {
+                            const hoy = new Date();
+                            const yyyy = hoy.getFullYear();
+                            const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+                            const dd = String(hoy.getDate()).padStart(2, '0');
+                            inputFP.value = `${yyyy}-${mm}-${dd}`;
+                        }
+                    </script>
 
                     <div class="flex items-center justify-between">
                         <label class="font-medium text-gray-700 w-2/5">Fecha de Contrato:</label>

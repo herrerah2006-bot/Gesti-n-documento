@@ -14,18 +14,15 @@
 
 <body class="bg-gray-100 h-screen flex flex-col overflow-hidden text-xs">
 
-
     <header class="bg-slate-800 text-white h-10 flex items-center justify-between px-6">
         <div class="flex space-x-6">
             <span class="font-bold text-white border-b-2 border-indigo-400 pb-0.5 cursor-pointer">Contratos</span>
-
         </div>
         <div class="flex items-center space-x-4">
             <span class="text-gray-300 text-[11px]">Admin (Henry)</span>
             <div class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center font-bold text-xs">H</div>
         </div>
     </header>
-
 
     <div class="bg-white border-b border-gray-300 px-6 py-1.5 flex items-center justify-between text-[11px]">
         <div></div>
@@ -35,34 +32,29 @@
         </div>
     </div>
 
-
     <div class="flex-1 flex overflow-hidden">
 
-
-
         <aside class="flex bg-white border-r border-gray-300 overflow-y-auto" id="nav-container">
-
         </aside>
-
 
         <main class="flex-1 bg-white flex flex-col p-6 overflow-auto">
             <div class="flex items-center justify-between pb-4 border-b border-gray-300 mb-4">
                 <h2 class="text-base font-bold text-slate-800">Reporte Diario</h2>
                 <div class="space-x-2">
-                    <button id="btnEstructuraHycite"
-                        class="bg-slate-800 text-white px-3 py-1 rounded text-xs hover:bg-slate-700 cursor-pointer">Generar
-                        Estructura HYCITE</button>
                     <button id="btnExportarExcel"
                         class="bg-emerald-700 text-white px-3 py-1 rounded text-xs hover:bg-emerald-600 cursor-pointer">Generar
                         Excel Reporte Diario</button>
+                    <button id="btnLimpiarRegistros"
+                        class="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-500 cursor-pointer">🗑
+                        Limpiar Registros</button>
                 </div>
             </div>
 
             <div class="flex items-center space-x-3 mb-4 text-xs">
                 <label class="font-medium text-gray-700">Fecha De Procesamiento:</label>
-                <input type="date" value="" class="px-2 py-1 border border-gray-300 rounded bg-white">
+                <!-- Input con ID para controlar el filtro de fecha -->
+                <input type="date" id="fechaFiltro" class="px-2 py-1 border border-gray-300 rounded bg-white">
             </div>
-
 
             <div class="border border-gray-300 rounded overflow-x-auto flex-1 bg-white">
                 <table class="w-full text-left border-collapse text-[11px]">
@@ -80,14 +72,8 @@
                     </thead>
                     <tbody id="tablaReportesBody">
                         <tr class="border-b border-gray-200 hover:bg-gray-50">
-                            <td class="p-2 border-r"></td>
-                            <td class="p-2 border-r"></td>
-                            <td class="p-2 border-r"></td>
-                            <td class="p-2 border-r"></td>
-                            <td class="p-2 border-r"></td>
-                            <td class="p-2 border-r"></td>
-                            <td class="p-2 border-r"></td>
-                            <td class="p-2"></td>
+                            <td colspan="8" class="p-4 text-center text-gray-500">Seleccione una fecha para ver los
+                                registros.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -100,56 +86,135 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const tbody = document.getElementById("tablaReportesBody");
-            if (!tbody) return;
+            const inputFecha = document.getElementById("fechaFiltro");
+            const btnExcel = document.getElementById("btnExportarExcel");
 
-            const registros = JSON.parse(localStorage.getItem("contratos_indexados")) || [];
-            tbody.innerHTML = "";
+            if (!tbody || !inputFecha) return;
 
-            if (registros.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="p-4 text-center text-gray-500">No hay contratos indexados todavía.</td>
-                    </tr>
-                `;
-                return;
+            // Por defecto, colocar la fecha actual de la PC en el input al cargar
+            const hoyPC = new Date();
+            const yyyy = hoyPC.getFullYear();
+            const mm = String(hoyPC.getMonth() + 1).padStart(2, '0');
+            const dd = String(hoyPC.getDate()).padStart(2, '0');
+            const fechaHoyStr = `${yyyy}-${mm}-${dd}`;
+            inputFecha.value = fechaHoyStr;
+
+            // Función robusta para obtener los registros filtrados sin fallos de formato
+            function obtenerRegistrosFiltradosPorFecha() {
+                const todosRegistros = JSON.parse(localStorage.getItem("contratos_indexados")) || [];
+                const fechaSeleccionada = inputFecha.value; // Formato YYYY-MM-DD
+
+                if (!fechaSeleccionada) return [];
+
+                return todosRegistros.filter(item => {
+                    if (!item.fechaProceso) return false;
+                    let fechaReg = item.fechaProceso.trim();
+                    let fechaSel = fechaSeleccionada.trim();
+
+                    return fechaReg === fechaSel || fechaReg.includes(fechaSel) || fechaSel.includes(fechaReg);
+                });
             }
 
-            registros.forEach((item) => {
-                const fila = document.createElement("tr");
-                fila.className = "border-b border-gray-200 hover:bg-gray-50 text-center";
+            // Función para renderizar la tabla en pantalla según la fecha seleccionada
+            function renderizarTabla() {
+                const registrosFecha = obtenerRegistrosFiltradosPorFecha();
+                tbody.innerHTML = "";
 
-                // Unificamos Folio + Cliente para la columna Archivo
-                const folioStr = item.nroContrato || '';
-                const clienteStr = item.nombreCliente || '';
-                const archivoTexto = folioStr ? (folioStr + " " + clienteStr) : clienteStr;
+                if (registrosFecha.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="p-4 text-center text-gray-500">No hay contratos indexados para la fecha seleccionada.</td>
+                        </tr>
+                    `;
+                    return;
+                }
 
-                fila.innerHTML = `
-                    <td class="p-2 border-r">${item.fechaProceso || ''}</td>
-                    <td class="p-2 border-r">${item.fechaContrato || ''}</td>
-                    <td class="p-2 border-r">${item.nroDistribuidor || ''}</td>
-                    <td class="p-2 border-r">${folioStr}</td>
-                    <td class="p-2 border-r">${clienteStr}</td>
-                    <td class="p-2 border-r">${item.observaciones || item.obsHojas || ''}</td>
-                    <td class="p-2 border-r"></td>
-                    <td class="p-2">${archivoTexto}</td>
-                `;
-                tbody.appendChild(fila);
-            });
+                registrosFecha.forEach((item) => {
+                    const fila = document.createElement("tr");
+                    fila.className = "border-b border-gray-200 hover:bg-gray-50 text-center";
 
-            // 1. Botón: Generar Excel (.xls) con nombre dinámico: Folio + Cliente
-            const btnExcel = document.getElementById("btnExportarExcel");
+                    // Respaldo seguro para leer las propiedades de los datos
+                    const folioStr = item.nroContrato || item.folio || '';
+                    const clienteStr = item.nombreCliente || item.cliente || '';
+                    const distribuidorStr = item.nroDistribuidor || item.distribuidor || '';
+                    const observacionesStr = item.observaciones || item.obsHojas || '';
+                    const archivoTexto = folioStr ? (folioStr + " " + clienteStr) : clienteStr;
+
+                    fila.innerHTML = `
+                        <td class="p-2 border-r">${item.fechaProceso || ''}</td>
+                        <td class="p-2 border-r">${item.fechaContrato || ''}</td>
+                        <td class="p-2 border-r">${distribuidorStr}</td>
+                        <td class="p-2 border-r">${folioStr}</td>
+                        <td class="p-2 border-r">${clienteStr}</td>
+                        <td class="p-2 border-r">${observacionesStr}</td>
+                        <td class="p-2 border-r"></td>
+                        <td class="p-2">${archivoTexto}</td>
+                    `;
+                    tbody.appendChild(fila);
+                });
+            }
+
+            // Renderizar al cargar la página
+            renderizarTabla();
+
+            // Actualizar tabla al cambiar la fecha en el input
+            inputFecha.addEventListener("change", renderizarTabla);
+
+            // 2. Botón de Exportar Excel con la lógica de cortes autónomos por hora y día
             if (btnExcel) {
                 btnExcel.addEventListener("click", () => {
-                    if (registros.length === 0) {
-                        alert("⚠ No hay registros indexados para exportar.");
+                    const registrosFecha = obtenerRegistrosFiltradosPorFecha();
+
+                    if (registrosFecha.length === 0) {
+                        alert("⚠ No hay registros indexados para la fecha seleccionada.");
                         return;
                     }
 
-                    let primerReg = registros[0];
-                    let nombreDinamico = "reporte_diario_contratos";
-                    if (primerReg && primerReg.nroContrato && primerReg.nombreCliente) {
-                        nombreDinamico = primerReg.nroContrato + " " + primerReg.nombreCliente;
+                    // Reloj y día actual de la PC por fuera (autónomo)
+                    const ahora = new Date();
+                    const diaSemana = ahora.getDay(); // 0: Dom, 1: Lun, 2: Mar, 3: Mié, 4: Jue, 5: Vie, 6: Sáb
+                    const horasPC = ahora.getHours();
+                    const minutosPC = ahora.getMinutes();
+                    const horaMinutoStr = `${String(horasPC).padStart(2, '0')}:${String(minutosPC).padStart(2, '0')}`;
+
+                    let registrosAExportar = [];
+                    let etiquetaTurno = "";
+
+                    // REGLAS DE CORTE AUTOMÁTICO SEGÚN DÍA DE LA SEMANA
+                    if (diaSemana === 2 || diaSemana === 4) {
+                        // Martes (2) o Jueves (4) -> 3 cortes específicos (10-11, 13-14, 15-16)
+                        if (horaMinutoStr >= "10:00" && horaMinutoStr <= "11:00") {
+                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro >= "10:00" && r.horaRegistro <= "11:00");
+                            etiquetaTurno = "Corte_10_11";
+                        } else if (horaMinutoStr >= "13:00" && horaMinutoStr <= "14:00") {
+                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro >= "13:00" && r.horaRegistro <= "14:00");
+                            etiquetaTurno = "Corte_13_14";
+                        } else if (horaMinutoStr >= "15:00" && horaMinutoStr <= "16:00") {
+                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro >= "15:00" && r.horaRegistro <= "16:00");
+                            etiquetaTurno = "Corte_15_16";
+                        } else {
+                            alert(`⚠ Fuera de ventana de corte para Martes/Jueves. Hora actual de PC (${horaMinutoStr}) no corresponde a los bloques (10-11, 13-14, 15-16).`);
+                            return;
+                        }
+                    } else {
+                        // Lunes (1), Miércoles (3), Viernes (5) [o por defecto] -> 2 cortes (AM / PM)
+                        if (horaMinutoStr < "12:00") {
+                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro < "12:00");
+                            etiquetaTurno = "AM";
+                        } else {
+                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro >= "12:00");
+                            etiquetaTurno = "PM";
+                        }
                     }
+
+                    if (registrosAExportar.length === 0) {
+                        alert(`⚠ No hay registros en el corte actual (${etiquetaTurno}) para la fecha seleccionada.`);
+                        return;
+                    }
+
+                    // Nombre dinámico del archivo con fecha y turno
+                    let fechaSel = inputFecha.value;
+                    let nombreDinamico = `reporte_diario_${fechaSel}_${etiquetaTurno}`;
 
                     let tablaHtml = `
                         <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -177,16 +242,16 @@
                                 <tbody>
                     `;
 
-                    registros.forEach(r => {
-                        let f = r.nroContrato || '';
-                        let c = r.nombreCliente || '';
+                    registrosAExportar.forEach(r => {
+                        let f = r.nroContrato || r.folio || '';
+                        let c = r.nombreCliente || r.cliente || '';
                         let arch = f ? (f + " " + c) : c;
 
                         tablaHtml += `
                             <tr>
                                 <td style="text-align: center;">${r.fechaProceso || ''}</td>
                                 <td style="text-align: center;">${r.fechaContrato || ''}</td>
-                                <td style="text-align: center;">${r.nroDistribuidor || ''}</td>
+                                <td style="text-align: center;">${r.nroDistribuidor || r.distribuidor || ''}</td>
                                 <td style="text-align: center;">${f}</td>
                                 <td>${c}</td>
                                 <td>${r.observaciones || r.obsHojas || ''}</td>
@@ -208,56 +273,19 @@
                     document.body.removeChild(link);
                 });
             }
-
-         const btnHycite = document.getElementById("btnEstructuraHycite");
-            if (btnHycite) {
-                btnHycite.addEventListener("click", () => {
-                    const registros = JSON.parse(localStorage.getItem("contratos_indexados")) || [];
-                    if (registros.length === 0) {
-                        alert("⚠ No hay registros indexados para generar el documento.");
-                        return;
+        });
+        // 3. Botón para limpiar/borrar todos los registros indexados
+            const btnLimpiar = document.getElementById("btnLimpiarRegistros");
+            if (btnLimpiar) {
+                btnLimpiar.addEventListener("click", () => {
+                    if (confirm("⚠ ¿Estás seguro de que deseas borrar todos los registros indexados almacenados? Esta acción no se puede deshacer.")) {
+                        localStorage.removeItem("contratos_indexados");
+                        renderizarTabla();
+                        alert("✔ ¡Registros limpiados con éxito!");
                     }
-
-                    let primerReg = registros[0];
-                    let folio = primerReg.nroContrato || 'S/N';
-                    let cliente = primerReg.nombreCliente || 'Cliente';
-                    let nombreArchivoFinal = folio + " " + cliente;
-
-                    // Buscamos el PDF directamente desde sessionStorage que viajó al indexar
-                    let pdfUrl = sessionStorage.getItem("pdf_para_reporte") || primerReg.pdfUrl || primerReg.archivoPdf;
-
-                    let ventanaImpresion = window.open('', '_blank');
-                    let html = '<html lang="es"><head><meta charset="utf-8">';
-                    html += '<title>' + nombreArchivoFinal + '</title>';
-                    html += '<style>';
-                    html += 'body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #525659; }';
-                    html += '#visor-pdf { width: 100%; height: 100%; border: none; }';
-                    html += '.barra-superior { position: absolute; top: 0; left: 0; right: 0; background: #1e293b; color: white; padding: 10px; font-family: Arial; font-size: 14px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }';
-                    html += '.btn-guardar { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }';
-                    html += '</style></head><body>';
-
-                    if (pdfUrl) {
-                        html += '<div class="barra-superior">';
-                        html += '<span><b>Documento:</b> ' + nombreArchivoFinal + '</span>';
-                        html += '<button class="btn-guardar" onclick="window.print()">Imprimir / Guardar PDF</button>';
-                        html += '</div>';
-                        html += '<embed id="visor-pdf" src="' + pdfUrl + '#toolbar=1" type="application/pdf" />';
-                    } else {
-                        html += '<div style="color: white; text-align: center; margin-top: 100px; font-family: Arial;">';
-                        html += '<h2>⚠ No se encontró el archivo PDF en la sesión</h2>';
-                        html += '<p>Por favor indexa un documento primero.</p>';
-                        html += '</div>';
-                    }
-
-                    html += '</body></html>';
-
-                    ventanaImpresion.document.write(html);
-                    ventanaImpresion.document.close();
                 });
             }
-        });
     </script>
- 
 </body>
 
 </html>

@@ -53,7 +53,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                const fechaProceso = document.getElementById('fechaProceso')?.value.trim() || "";
+               // Aseguramos que tome la fecha automática incluso si es readonly
+                const fechaProceso = document.getElementById('fechaProceso')?.value.trim() || new Date().toISOString().split('T')[0];
                 const fechaContrato = document.getElementById('fechaContrato')?.value.trim() || "";
                 const nroDistribuidor = document.getElementById('nroDistribuidor')?.value.trim() || "";
                 const nroContrato = document.getElementById('nroContrato')?.value.trim() || "";
@@ -63,7 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const codigoEmpresa = document.getElementById('codigoEmpresa')?.value.trim() || "";
                 const areaEmpresa = document.getElementById('areaEmpresa')?.value.trim() || "";
 
-                if (!fechaProceso || !fechaContrato || !nroDistribuidor || !nroContrato || !nombreCliente || !nombreEmpresa || !codigoEmpresa || !areaEmpresa) {
+                // Validamos los campos restantes (la fecha ya viene fija y lista por defecto)
+                if (!fechaContrato || !nroDistribuidor || !nroContrato || !nombreCliente || !nombreEmpresa || !codigoEmpresa || !areaEmpresa) {
                     alert("⚠ Error: Todos los apartados y campos de la metadata deben estar llenos antes de indexar el contrato.");
                     return;
                 }
@@ -74,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const docActual = listaDeArchivos[0];
                         const linkDescarga = document.createElement('a');
                         linkDescarga.href = docActual.url;
-                        linkDescarga.download = `Contrato_${nroContrato}_${nombreCliente}.pdf`;
+                        linkDescarga.download = `${nroContrato}_${nombreCliente}.pdf`;
                         document.body.appendChild(linkDescarga);
                         linkDescarga.click();
                         document.body.removeChild(linkDescarga);
@@ -88,6 +90,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // 3. Incrementar contadores y control de tiempos
                 incrementarContadorSi();
+// Capturamos la hora actual exacta de la PC de forma oculta
+                const ahora = new Date();
+                const horas = String(ahora.getHours()).padStart(2, '0');
+                const minutos = String(ahora.getMinutes()).padStart(2, '0');
+                const horaActualStr = `${horas}:${minutos}`; // Ej: "10:45" o "14:20"
 
                 const datosContrato = {
                     fechaProceso,
@@ -99,7 +106,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     nombreEmpresa,
                     codigoEmpresa,
                     areaEmpresa,
-                    fechaRegistro: new Date().toLocaleString()
+                    fechaRegistro: ahora.toLocaleString(),
+                    horaRegistro: horaActualStr // 👈 ¡Esta es la clave secreta para los cortes!
                 };
 
                 let registrosGuardados = JSON.parse(localStorage.getItem("contratos_indexados")) || [];

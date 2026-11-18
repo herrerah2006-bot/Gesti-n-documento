@@ -47,7 +47,7 @@
             <div class="flex items-center justify-between pb-4 border-b border-gray-300 mb-4">
                 <h2 class="text-base font-bold text-slate-800">Control de Tiempos y Producción</h2>
                 <div class="space-x-2">
-                    <button
+                    <button id="btnExportarExcel"
                         class="bg-emerald-700 text-white px-3 py-1 rounded text-xs hover:bg-emerald-600 cursor-pointer">Exportar
                         Excel Control Tiempos</button>
                 </div>
@@ -72,7 +72,8 @@
                     </thead>
                     <tbody id="tablaTiemposBody">
                         <tr class="border-b border-gray-200 hover:bg-gray-50 text-center">
-                            <td colspan="10" class="p-4 text-center text-gray-500">Cargando registros de producción...</td>
+                            <td colspan="10" class="p-4 text-center text-gray-500">Cargando registros de producción...
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -82,7 +83,7 @@
     </div>
 
 
-   <script src="js/nav.js"></script>
+    <script src="js/nav.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const tbody = document.getElementById("tablaTiemposBody");
@@ -100,7 +101,7 @@
                 return;
             }
 
-            
+
             let registrosPorFecha = {};
 
             cortes.forEach(corte => {
@@ -121,12 +122,12 @@
 
             tbody.innerHTML = "";
 
-            
+
             Object.keys(registrosPorFecha).forEach(fecha => {
                 let datos = registrosPorFecha[fecha];
-                
+
                 let cantidadPm = datos.pm > 0 ? datos.pm : (datos.am > 1 ? datos.am : 1);
-                let totalSuma = 1 + cantidadPm; 
+                let totalSuma = 1 + cantidadPm;
 
                 const fila = document.createElement("tr");
                 fila.className = "border-b border-gray-200 hover:bg-gray-50 text-center";
@@ -141,12 +142,146 @@
                     <td class="p-2 border-r">17:00 p. m.</td>
                     <td class="p-2 border-r">2:00</td>
                     <td class="p-2 border-r">6:00</td>
-                    <td class="p-2 font-bold text-slate-800">${totalSuma} Contratos</td>
+                    <td class="p-2 border-r">8:00</td>
                 `;
 
                 tbody.appendChild(fila);
             });
         });
+      document.getElementById("btnExportarExcel")?.addEventListener("click", () => {
+    const cortes = JSON.parse(localStorage.getItem("control_tiempos")) || [];
+    if (cortes.length === 0) {
+        alert("No hay registros de producción para exportar.");
+        return;
+    }
+
+    let registrosPorFecha = {};
+
+    cortes.forEach(corte => {
+        let fechaLimpia = corte.fechaTurno ? corte.fechaTurno.split(' - ')[0] : "";
+        if (!fechaLimpia) return;
+        let turno = corte.turno || (corte.fechaTurno && corte.fechaTurno.includes('PM') ? 'PM' : 'AM');
+
+        if (!registrosPorFecha[fechaLimpia]) {
+            registrosPorFecha[fechaLimpia] = { am: 0, pm: 0, folios: 0, hasData: true };
+        }
+
+        if (turno === 'AM') {
+            registrosPorFecha[fechaLimpia].am += (corte.totalContratos || 1);
+        } else {
+            registrosPorFecha[fechaLimpia].pm += (corte.totalContratos || 1);
+        }
+        registrosPorFecha[fechaLimpia].folios += (corte.cantidadFolios || 1);
+    });
+
+    // Rellenar automáticamente los días intermedios sin registros en blanco para el Excel
+    let fechasKeys = Object.keys(registrosPorFecha);
+    if (fechasKeys.length > 0) {
+        function parseFecha(str) {
+            const partes = str.split('/');
+            return new Date(partes[2], partes[1] - 1, partes[0]);
+        }
+        function formatoFecha(date) {
+            let d = String(date.getDate()).padStart(2, '0');
+            let m = String(date.getMonth() + 1).padStart(2, '0');
+            let y = date.getFullYear();
+            return `${d}/${m}/${y}`;
+        }
+
+        let fechasDates = fechasKeys.map(f => parseFecha(f));
+        let minDate = new Date(Math.min.apply(null, fechasDates));
+        let maxDate = new Date(Math.max.apply(null, fechasDates));
+
+        let fechaActual = new Date(minDate);
+        while (fechaActual <= maxDate) {
+            let fechaStr = formatoFecha(fechaActual);
+            if (!registrosPorFecha[fechaStr]) {
+                registrosPorFecha[fechaStr] = { am: 0, pm: 0, folios: 0, hasData: false };
+            }
+            fechaActual.setDate(fechaActual.getDate() + 1);
+        }
+    }
+
+    // Ordenar cronológicamente
+    let fechasOrdenadas = Object.keys(registrosPorFecha).sort((a, b) => {
+        let pA = a.split('/'), pB = b.split('/');
+        return new Date(pA[2], pA[1]-1, pA[0]) - new Date(pB[2], pB[1]-1, pB[0]);
+    });
+
+    // Construir la tabla HTML con estilos directos para Excel (bordes y celdas)
+    let htmlTabla = `
+        <table border="1" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px;">
+            <thead>
+                <tr style="background-color: #f1f5f9; text-align: center;">
+                    <th style="border: 1px solid black; padding: 6px;">FECHA / TURNO</th>
+                    <th style="border: 1px solid black; padding: 6px;">CANTIDAD</th>
+                    <th style="border: 1px solid black; padding: 6px;">HORA INICIO</th>
+                    <th style="border: 1px solid black; padding: 6px;">HORA FIN</th>
+                    <th style="border: 1px solid black; padding: 6px;">CANTIDAD</th>
+                    <th style="border: 1px solid black; padding: 6px;">HORA INICIO</th>
+                    <th style="border: 1px solid black; padding: 6px;">HORA FIN</th>
+                    <th style="border: 1px solid black; padding: 6px;">HORAS POR...</th>
+                    <th style="border: 1px solid black; padding: 6px;">HORAS POR...</th>
+                    <th style="border: 1px solid black; padding: 6px;">TOTAL HORA</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    fechasOrdenadas.forEach(fecha => {
+        let datos = registrosPorFecha[fecha];
+        if (datos.hasData) {
+            let cantidadPm = datos.pm > 0 ? datos.pm : (datos.am > 1 ? datos.am : 1);
+            let totalSuma = 1 + cantidadPm;
+
+            htmlTabla += `
+                <tr style="text-align: center;">
+                    <td style="border: 1px solid black; padding: 6px; font-weight: bold;">${fecha}</td>
+                    <td style="border: 1px solid black; padding: 6px;">1</td>
+                    <td style="border: 1px solid black; padding: 6px;">10:00 a. m.</td>
+                    <td style="border: 1px solid black; padding: 6px;">11:30 a. m.</td>
+                    <td style="border: 1px solid black; padding: 6px;">${cantidadPm}</td>
+                    <td style="border: 1px solid black; padding: 6px;">11:00 a. m.</td>
+                    <td style="border: 1px solid black; padding: 6px;">17:00 p. m.</td>
+                    <td style="border: 1px solid black; padding: 6px;">8:00</td>
+                    <td style="border: 1px solid black; padding: 6px;">8:00</td>
+                    <td style="border: 1px solid black; padding: 6px; font-weight: bold;">${totalSuma} Contratos</td>
+                </tr>
+            `;
+        } else {
+            // Día sin registro: se deja la fecha y los espacios en blanco pintados con sus casillas
+            htmlTabla += `
+                <tr style="text-align: center;">
+                    <td style="border: 1px solid black; padding: 6px; font-weight: bold;">${fecha}</td>
+                    <td style="border: 1px solid black; padding: 6px;"></td>
+                    <td style="border: 1px solid black; padding: 6px;"></td>
+                    <td style="border: 1px solid black; padding: 6px;"></td>
+                    <td style="border: 1px solid black; padding: 6px;"></td>
+                    <td style="border: 1px solid black; padding: 6px;"></td>
+                    <td style="border: 1px solid black; padding: 6px;"></td>
+                    <td style="border: 1px solid black; padding: 6px;"></td>
+                    <td style="border: 1px solid black; padding: 6px;"></td>
+                    <td style="border: 1px solid black; padding: 6px;"></td>
+                </tr>
+            `;
+        }
+    });
+
+    htmlTabla += `</tbody></table>`;
+
+    // Generar y descargar el archivo .xls
+    let archivoBlob = new Blob([
+        '\ufeff' + '<html><head><meta charset="utf-8"></head><body>' + htmlTabla + '</body></html>'
+    ], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+
+    let enlaceDescarga = document.createElement("a");
+    enlaceDescarga.href = window.URL.createObjectURL(archivoBlob);
+    enlaceDescarga.download = `Control_Tiempos_${new Date().toLocaleDateString().replace(/\//g, '-')}.xls`;
+    
+    document.body.appendChild(enlaceDescarga);
+    enlaceDescarga.click();
+    document.body.removeChild(enlaceDescarga);
+});
     </script>
 </body>
 
