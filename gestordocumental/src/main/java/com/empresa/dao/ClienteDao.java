@@ -8,19 +8,18 @@ import java.sql.SQLException;
 
 public class ClienteDao {
 
-    
     public boolean insertarCliente(Cliente cliente) {
         String sql = "INSERT INTO clientes (cedula_ruc, cliente_nombre) VALUES (?, ?)";
-        
+
         try (Connection con = Conexion.obtenerConexion();
-             PreparedStatement pstmt = con.prepareStatement(sql)) {
-            
+                PreparedStatement pstmt = con.prepareStatement(sql)) {
+
             pstmt.setString(1, cliente.getCedulaRuc());
             pstmt.setString(2, cliente.getClienteNombre());
-            
+
             pstmt.executeUpdate();
             return true;
-            
+
         } catch (SQLException e) {
             System.err.println("Error al insertar cliente: " + e.getMessage());
             return false;

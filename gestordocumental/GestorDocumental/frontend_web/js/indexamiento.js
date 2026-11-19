@@ -1,9 +1,10 @@
 let paginaActual = 1;
 const totalPaginas = 6;
 let listaDeArchivos = [];
+let ultimoNombreArchivo = "";
 
 document.addEventListener("DOMContentLoaded", () => {
-    
+
     let contadorSiActual = localStorage.getItem('contadorGlobalSi');
     if (contadorSiActual === null || isNaN(contadorSiActual) || parseInt(contadorSiActual) > 10000) {
         contadorSiActual = 0;
@@ -15,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
         spanSi.innerText = contadorSiActual;
     }
 
-    
+
     const archivosGuardados = localStorage.getItem("lista_de_archivos_sesion");
     if (archivosGuardados) {
         try {
@@ -25,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    
+
     const inputsForm = document.querySelectorAll("#formIndexacion input, #formIndexacion textarea, input[id*='fecha'], input[id*='nro'], input[id*='nombre'], input[id*='observaciones'], input[id*='codigo'], input[id*='area']");
     inputsForm.forEach(input => {
         if (!input.id) return;
@@ -40,20 +41,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     actualizarListaDocumentos();
 
-   // 3. BOTONES DE INDEXACIÓN (SUPERIOR Y PANEL)
+
     const btnIndexadoSup = document.getElementById("btnIndexadoSuperior");
     const btnIndexadoPan = document.getElementById("btnIndexadoPanel");
 
     [btnIndexadoSup, btnIndexadoPan].forEach(el => {
         if (el) {
             el.addEventListener("click", () => {
-                // Validación estricta con la lista real sincronizada
+
                 if (listaDeArchivos.length === 0) {
                     alert("⚠ Error: No hay documentos pendientes. Debe importar un documento primero.");
                     return;
                 }
 
-               // Aseguramos que tome la fecha automática incluso si es readonly
+
                 const fechaProceso = document.getElementById('fechaProceso')?.value.trim() || new Date().toISOString().split('T')[0];
                 const fechaContrato = document.getElementById('fechaContrato')?.value.trim() || "";
                 const nroDistribuidor = document.getElementById('nroDistribuidor')?.value.trim() || "";
@@ -64,19 +65,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 const codigoEmpresa = document.getElementById('codigoEmpresa')?.value.trim() || "";
                 const areaEmpresa = document.getElementById('areaEmpresa')?.value.trim() || "";
 
-                // Validamos los campos restantes (la fecha ya viene fija y lista por defecto)
+
                 if (!fechaContrato || !nroDistribuidor || !nroContrato || !nombreCliente || !nombreEmpresa || !codigoEmpresa || !areaEmpresa) {
                     alert("⚠ Error: Todos los apartados y campos de la metadata deben estar llenos antes de indexar el contrato.");
                     return;
                 }
 
-                // 1. DESCARGAR AUTOMÁTICAMENTE EL PDF A LA PC
+                const nombreArchivoGenerado = `${nroContrato}_${nombreCliente}.pdf`;
+                ultimoNombreArchivo = nombreArchivoGenerado;
+
+
                 if (listaDeArchivos.length > 0) {
                     try {
                         const docActual = listaDeArchivos[0];
                         const linkDescarga = document.createElement('a');
                         linkDescarga.href = docActual.url;
-                        linkDescarga.download = `${nroContrato}_${nombreCliente}.pdf`;
+                        linkDescarga.download = nombreArchivoGenerado;
                         document.body.appendChild(linkDescarga);
                         linkDescarga.click();
                         document.body.removeChild(linkDescarga);
@@ -85,16 +89,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
 
-                // 2. Enviar la metadata al servidor Java y MySQL
-                guardarMetadataEnServidor();
 
-                // 3. Incrementar contadores y control de tiempos
+                guardarMetadataEnServidor(nombreArchivoGenerado);
+
+
                 incrementarContadorSi();
-// Capturamos la hora actual exacta de la PC de forma oculta
+
                 const ahora = new Date();
                 const horas = String(ahora.getHours()).padStart(2, '0');
                 const minutos = String(ahora.getMinutes()).padStart(2, '0');
-                const horaActualStr = `${horas}:${minutos}`; // Ej: "10:45" o "14:20"
+                const horaActualStr = `${horas}:${minutos}`;
 
                 const datosContrato = {
                     fechaProceso,
@@ -107,14 +111,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     codigoEmpresa,
                     areaEmpresa,
                     fechaRegistro: ahora.toLocaleString(),
-                    horaRegistro: horaActualStr // 👈 ¡Esta es la clave secreta para los cortes!
+                    horaRegistro: horaActualStr
+
                 };
 
                 let registrosGuardados = JSON.parse(localStorage.getItem("contratos_indexados")) || [];
                 registrosGuardados.push(datosContrato);
                 localStorage.setItem("contratos_indexados", JSON.stringify(registrosGuardados));
 
-                // Actualizar control de tiempos para hoy
+
                 let hoy = new Date();
                 let dia = String(hoy.getDate()).padStart(2, '0');
                 let mes = String(hoy.getMonth() + 1).padStart(2, '0');
@@ -123,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 let controlTiempos = JSON.parse(localStorage.getItem("control_tiempos")) || [];
                 let registroHoy = controlTiempos.find(c => c.fechaTurno && c.fechaTurno.includes(fechaActualStr));
-                
+
                 if (registroHoy) {
                     registroHoy.totalContratos = (registroHoy.totalContratos || 0) + 1;
                     registroHoy.cantidadFolios = registroHoy.totalContratos;
@@ -137,13 +142,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 localStorage.setItem("control_tiempos", JSON.stringify(controlTiempos));
 
-                // 4. Mover la lista de archivos, actualizar DOM y vaciar casillas/borradores
+                const corteActual = registroHoy || controlTiempos[controlTiempos.length - 1];
+                guardarControlTiemposEnServidor(fechaActualStr, corteActual);
+
+
                 listaDeArchivos.shift();
                 localStorage.setItem("lista_de_archivos_sesion", JSON.stringify(listaDeArchivos));
                 actualizarListaDocumentos();
                 limpiarBorradorFormulario();
 
-                // Limpiar explícitamente los inputs visuales del formulario
+
                 const inputsForm = document.querySelectorAll("#formIndexacion input, #formIndexacion textarea");
                 inputsForm.forEach(input => { input.value = ""; });
 
@@ -152,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    
+
     const btnImportar = document.getElementById("btnImportar");
     const inputArchivoPdf = document.getElementById("inputArchivoPdf");
 
@@ -165,12 +173,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const archivo = e.target.files[0];
             if (archivo) {
                 const lector = new FileReader();
-                lector.onload = function(evento) {
+                lector.onload = function (evento) {
                     const base64Data = evento.target.result;
                     const nuevoDoc = { nombre: archivo.name, url: base64Data };
                     listaDeArchivos.push(nuevoDoc);
                     localStorage.setItem("lista_de_archivos_sesion", JSON.stringify(listaDeArchivos));
-                    
+
                     actualizarListaDocumentos();
                     mostrarEnVisor(nuevoDoc);
                 };
@@ -179,13 +187,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    
+
     const btnGuardar = document.getElementById("btnGuardar");
     if (btnGuardar) {
         btnGuardar.addEventListener("click", guardarMetadataEnServidor);
     }
 
-    
+
     const btnAnterior = document.getElementById("btnAnterior");
     const btnSiguiente = document.getElementById("btnSiguiente");
 
@@ -205,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    
+
     if (listaDeArchivos.length > 0) {
         mostrarEnVisor(listaDeArchivos[0]);
     }
@@ -220,7 +228,7 @@ function incrementarContadorSi() {
         contadorSiActual = parseInt(contadorSiActual) + 1;
     }
     localStorage.setItem('contadorGlobalSi', contadorSiActual);
-    
+
     const spanSi = document.getElementById("contadorSi");
     if (spanSi) {
         spanSi.innerText = contadorSiActual;
@@ -259,9 +267,8 @@ function actualizarListaDocumentos() {
     listaDeArchivos.forEach((doc, index) => {
         const linkDoc = document.createElement("a");
         linkDoc.href = "#";
-        linkDoc.className = `block p-0.5 rounded truncate transition hover:bg-slate-700 cursor-pointer ${
-            index === 0 ? 'bg-slate-800 font-bold text-white' : 'opacity-80 text-blue-300'
-        }`;
+        linkDoc.className = `block p-0.5 rounded truncate transition hover:bg-slate-700 cursor-pointer ${index === 0 ? 'bg-slate-800 font-bold text-white' : 'opacity-80 text-blue-300'
+            }`;
         linkDoc.innerHTML = `📄 ${doc.nombre}`;
 
         linkDoc.addEventListener("click", (e) => {
@@ -314,32 +321,83 @@ function actualizarVisorPagina() {
 }
 
 
-function guardarMetadataEnServidor() {
+function guardarMetadataEnServidor(nombreArchivoParam = "") {
+    const nroContratoActual = document.getElementById('nroContrato')?.value.trim() || '';
+    const nombreClienteActual = document.getElementById('nombreCliente')?.value.trim() || '';
+    const nombreCalculado = (nroContratoActual && nombreClienteActual)
+        ? `${nroContratoActual}_${nombreClienteActual}.pdf`
+        : '';
+
+    const archivoFinal = nombreArchivoParam || ultimoNombreArchivo || nombreCalculado || listaDeArchivos[0]?.nombre || 'Sin nombre';
+
     const data = {
         fechaProceso: document.getElementById('fechaProceso')?.value || '',
         fechaContrato: document.getElementById('fechaContrato')?.value || '',
         nroDistribuidor: document.getElementById('nroDistribuidor')?.value || '',
         nroContrato: document.getElementById('nroContrato')?.value || '',
         nombreCliente: document.getElementById('nombreCliente')?.value || '',
-        observaciones: document.getElementById('observaciones')?.value || '',
+        observaciones: document.getElementById('obsHojas')?.value.trim() || document.getElementById('observaciones')?.value.trim() || '',
         nombreEmpresa: document.getElementById('nombreEmpresa')?.value || '',
         codigoEmpresa: document.getElementById('codigoEmpresa')?.value || '',
-        areaEmpresa: document.getElementById('areaEmpresa')?.value || ''
+        areaEmpresa: document.getElementById('areaEmpresa')?.value || '',
+        archivo: archivoFinal
     };
+
 
     fetch('http://localhost:8080/api/clientes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(res => res.json())
-    .then(response => {
-        // Opcional: puedes dejar la notificación aquí o dejar solo la del botón principal
+        .then(res => res.json())
+        .then(response => {
+
+        })
+        .catch(err => {
+            console.error("Error de conexión:", err);
+            alert("Error: No se pudo conectar con el servidor Java en el puerto 8080.");
+        });
+}
+
+
+function guardarControlTiemposEnServidor(fechaStr, corte) {
+    const cantidadPm = corte?.totalContratos || 1;
+    const ahora = new Date();
+    const anio = ahora.getFullYear();
+    const mes = String(ahora.getMonth() + 1).padStart(2, "0");
+    const dia = String(ahora.getDate()).padStart(2, "0");
+    const horas = String(ahora.getHours()).padStart(2, "0");
+    const minutos = String(ahora.getMinutes()).padStart(2, "0");
+    const segundos = String(ahora.getSeconds()).padStart(2, "0");
+
+    const fechaCreacionSql = `${anio}-${mes}-${dia} ${horas}:${minutos}:${segundos}`;
+
+    const payloadControlTiempos = {
+        fechaTurno: fechaStr,
+        cantidad1: 1,
+        horaInicio1: "10:00 a. m.",
+        horaFin1: "11:30 a. m.",
+        cantidad2: cantidadPm,
+        horaInicio2: "11:00 a. m.",
+        horaFin2: "17:00 p. m.",
+        horasPorcentaje: "2:00",
+        horasPorProceso: "6:00",
+        totalHoras: "8:00",
+        fechaCreacion: fechaCreacionSql
+    };
+
+    fetch("http://localhost:8080/api/control-tiempos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=UTF-8" },
+        body: JSON.stringify(payloadControlTiempos)
     })
-    .catch(err => {
-        console.error("Error de conexión:", err);
-        alert("Error: No se pudo conectar con el servidor Java en el puerto 8080.");
-    });
+        .then(res => res.json())
+        .then(response => {
+            console.log("Control de tiempos en MySQL:", response);
+        })
+        .catch(err => {
+            console.error("Error al enviar control de tiempos:", err);
+        });
 }
 
 

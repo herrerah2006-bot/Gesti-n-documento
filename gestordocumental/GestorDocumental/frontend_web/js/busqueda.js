@@ -7,12 +7,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!tbody) return;
 
-    // Obtener todos los registros que viajan desde index.html
+
     function obtenerTodosLosRegistros() {
         return JSON.parse(localStorage.getItem("contratos_indexados")) || [];
     }
 
-    // Pintar la tabla con los registros filtrados
+
     function renderizarBusqueda(lista) {
         tbody.innerHTML = "";
 
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Lógica de filtrado en vivo
+
     function filtrarRegistros() {
         const todos = obtenerTodosLosRegistros();
         const textoFolio = (inputFolio?.value || "").toLowerCase().trim();
@@ -66,12 +66,12 @@ document.addEventListener("DOMContentLoaded", () => {
         renderizarBusqueda(filtrados);
     }
 
-    // Eventos en tiempo real al escribir
+
     if (inputFolio) inputFolio.addEventListener("input", filtrarRegistros);
     if (inputCliente) inputCliente.addEventListener("input", filtrarRegistros);
     if (inputDistribuidor) inputDistribuidor.addEventListener("input", filtrarRegistros);
 
-    // Botón limpiar
+
     if (btnLimpiar) {
         btnLimpiar.addEventListener("click", () => {
             if (inputFolio) inputFolio.value = "";
@@ -81,6 +81,5 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Carga inicial de todos los registros indexados
     renderizarBusqueda(obtenerTodosLosRegistros());
 });

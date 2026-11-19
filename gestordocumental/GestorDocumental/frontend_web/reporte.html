@@ -52,7 +52,6 @@
 
             <div class="flex items-center space-x-3 mb-4 text-xs">
                 <label class="font-medium text-gray-700">Fecha De Procesamiento:</label>
-                <!-- Input con ID para controlar el filtro de fecha -->
                 <input type="date" id="fechaFiltro" class="px-2 py-1 border border-gray-300 rounded bg-white">
             </div>
 
@@ -88,10 +87,10 @@
             const tbody = document.getElementById("tablaReportesBody");
             const inputFecha = document.getElementById("fechaFiltro");
             const btnExcel = document.getElementById("btnExportarExcel");
+            const btnLimpiar = document.getElementById("btnLimpiarRegistros");
 
             if (!tbody || !inputFecha) return;
 
-            // Por defecto, colocar la fecha actual de la PC en el input al cargar
             const hoyPC = new Date();
             const yyyy = hoyPC.getFullYear();
             const mm = String(hoyPC.getMonth() + 1).padStart(2, '0');
@@ -99,10 +98,9 @@
             const fechaHoyStr = `${yyyy}-${mm}-${dd}`;
             inputFecha.value = fechaHoyStr;
 
-            // Función robusta para obtener los registros filtrados sin fallos de formato
             function obtenerRegistrosFiltradosPorFecha() {
                 const todosRegistros = JSON.parse(localStorage.getItem("contratos_indexados")) || [];
-                const fechaSeleccionada = inputFecha.value; // Formato YYYY-MM-DD
+                const fechaSeleccionada = inputFecha.value;
 
                 if (!fechaSeleccionada) return [];
 
@@ -115,7 +113,6 @@
                 });
             }
 
-            // Función para renderizar la tabla en pantalla según la fecha seleccionada
             function renderizarTabla() {
                 const registrosFecha = obtenerRegistrosFiltradosPorFecha();
                 tbody.innerHTML = "";
@@ -133,7 +130,6 @@
                     const fila = document.createElement("tr");
                     fila.className = "border-b border-gray-200 hover:bg-gray-50 text-center";
 
-                    // Respaldo seguro para leer las propiedades de los datos
                     const folioStr = item.nroContrato || item.folio || '';
                     const clienteStr = item.nombreCliente || item.cliente || '';
                     const distribuidorStr = item.nroDistribuidor || item.distribuidor || '';
@@ -154,13 +150,9 @@
                 });
             }
 
-            // Renderizar al cargar la página
             renderizarTabla();
-
-            // Actualizar tabla al cambiar la fecha en el input
             inputFecha.addEventListener("change", renderizarTabla);
 
-            // 2. Botón de Exportar Excel con la lógica de cortes autónomos por hora y día
             if (btnExcel) {
                 btnExcel.addEventListener("click", () => {
                     const registrosFecha = obtenerRegistrosFiltradosPorFecha();
@@ -170,9 +162,11 @@
                         return;
                     }
 
-                    // Reloj y día actual de la PC por fuera (autónomo)
                     const ahora = new Date();
-                    const diaSemana = ahora.getDay(); // 0: Dom, 1: Lun, 2: Mar, 3: Mié, 4: Jue, 5: Vie, 6: Sáb
+                    const diaSemana = ahora.getDay();
+                    const diaDelMes = ahora.getDate();
+                    const esPeriodoUnificacion = diaDelMes >= 20;
+
                     const horasPC = ahora.getHours();
                     const minutosPC = ahora.getMinutes();
                     const horaMinutoStr = `${String(horasPC).padStart(2, '0')}:${String(minutosPC).padStart(2, '0')}`;
@@ -180,25 +174,32 @@
                     let registrosAExportar = [];
                     let etiquetaTurno = "";
 
-                    // REGLAS DE CORTE AUTOMÁTICO SEGÚN DÍA DE LA SEMANA
                     if (diaSemana === 2 || diaSemana === 4) {
-                        // Martes (2) o Jueves (4) -> 3 cortes específicos (10-11, 13-14, 15-16)
-                        if (horaMinutoStr >= "10:00" && horaMinutoStr <= "11:00") {
-                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro >= "10:00" && r.horaRegistro <= "11:00");
-                            etiquetaTurno = "Corte_10_11";
-                        } else if (horaMinutoStr >= "13:00" && horaMinutoStr <= "14:00") {
-                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro >= "13:00" && r.horaRegistro <= "14:00");
-                            etiquetaTurno = "Corte_13_14";
-                        } else if (horaMinutoStr >= "15:00" && horaMinutoStr <= "16:00") {
-                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro >= "15:00" && r.horaRegistro <= "16:00");
-                            etiquetaTurno = "Corte_15_16";
+
+                        if (horaMinutoStr >= "10:00" && horaMinutoStr < "13:00") {
+                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro >= "10:00" && r.horaRegistro < "13:00");
+                            etiquetaTurno = "Corte_10_13";
+                        } else if (esPeriodoUnificacion && horaMinutoStr >= "13:00" && horaMinutoStr <= "17:00") {
+
+                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro >= "13:00" && r.horaRegistro <= "17:00");
+                            etiquetaTurno = "Corte_13_17_Unido";
+                        } else if (!esPeriodoUnificacion && horaMinutoStr >= "13:00" && horaMinutoStr < "15:00") {
+                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro >= "13:00" && r.horaRegistro < "15:00");
+                            etiquetaTurno = "Corte_13_15";
+                        } else if (!esPeriodoUnificacion && horaMinutoStr >= "15:00" && horaMinutoStr <= "17:00") {
+                            registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro >= "15:00" && r.horaRegistro <= "17:00");
+                            etiquetaTurno = "Corte_15_17";
                         } else {
-                            alert(`⚠ Fuera de ventana de corte para Martes/Jueves. Hora actual de PC (${horaMinutoStr}) no corresponde a los bloques (10-11, 13-14, 15-16).`);
+                            alert(`⚠ Fuera de ventana de corte para Martes/Jueves. Hora actual de PC (${horaMinutoStr}) no corresponde a los bloques (10:00-13:00, 13:00-15:00, 15:00-17:00).`);
                             return;
                         }
                     } else {
-                        // Lunes (1), Miércoles (3), Viernes (5) [o por defecto] -> 2 cortes (AM / PM)
-                        if (horaMinutoStr < "12:00") {
+
+                        if (esPeriodoUnificacion) {
+
+                            registrosAExportar = [...registrosFecha];
+                            etiquetaTurno = "AM_PM_Unido";
+                        } else if (horaMinutoStr < "12:00") {
                             registrosAExportar = registrosFecha.filter(r => r.horaRegistro && r.horaRegistro < "12:00");
                             etiquetaTurno = "AM";
                         } else {
@@ -212,7 +213,6 @@
                         return;
                     }
 
-                    // Nombre dinámico del archivo con fecha y turno
                     let fechaSel = inputFecha.value;
                     let nombreDinamico = `reporte_diario_${fechaSel}_${etiquetaTurno}`;
 
@@ -273,9 +273,7 @@
                     document.body.removeChild(link);
                 });
             }
-        });
-        // 3. Botón para limpiar/borrar todos los registros indexados
-            const btnLimpiar = document.getElementById("btnLimpiarRegistros");
+
             if (btnLimpiar) {
                 btnLimpiar.addEventListener("click", () => {
                     if (confirm("⚠ ¿Estás seguro de que deseas borrar todos los registros indexados almacenados? Esta acción no se puede deshacer.")) {
@@ -285,6 +283,7 @@
                     }
                 });
             }
+        });
     </script>
 </body>
 

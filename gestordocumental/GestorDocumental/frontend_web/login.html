@@ -30,6 +30,16 @@
                     class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
 
+            <div>
+                <label class="block font-medium text-gray-700 mb-1">Ingresar como:</label>
+                <select id="rolIngreso" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="administrador">administrador</option>
+                    <option value="usuario">usuario</option>
+                    <option value="lector">lector</option>
+                </select>
+            </div>
+
             <button type="submit"
                 class="w-full bg-indigo-600 text-white py-2 rounded font-semibold hover:bg-indigo-500 transition-colors cursor-pointer">
                 Iniciar Sesión
@@ -45,42 +55,281 @@
         </div>
     </div>
 
+
+    <div id="modalRegistro" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 px-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm border border-gray-200">
+            <div class="flex items-center justify-between mb-4 border-b pb-2">
+                <h2 class="text-sm font-bold text-slate-800">Registrar Nuevo Usuario</h2>
+                <button id="btnCerrarModal" type="button"
+                    class="text-gray-400 hover:text-gray-700 text-sm cursor-pointer">✕</button>
+            </div>
+
+            <form id="formRegistro" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Nombre de usuario / Cédula:</label>
+                    <input type="text" id="regUsuario" required minlength="3" placeholder="Ej. jperez"
+                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Correo electrónico real:</label>
+                    <input type="email" id="regCorreo" required placeholder="Ej. nombre@empresa.com"
+                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Contraseña:</label>
+                    <input type="password" id="regPassword" required minlength="4" placeholder="Mínimo 4 caracteres"
+                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Rol en el sistema:</label>
+                    <select id="regRol" required
+                        class="w-full px-3 py-1.5 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="usuario" selected>usuario (operativo)</option>
+                        <option value="administrador">administrador (control total / borrar / modificar)</option>
+                        <option value="lector">lector (solo lectura)</option>
+                    </select>
+                </div>
+
+
+                <div id="contenedorClaveAdmin" class="hidden">
+                    <label class="block font-medium text-amber-800 mb-1">Clave maestra de administrador:</label>
+                    <input type="password" id="regClaveAdmin" placeholder="Ingrese clave maestra"
+                        class="w-full px-3 py-1.5 border border-amber-400 rounded bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <p id="estadoCupoAdmin" class="text-[10px] text-gray-500 mt-1"></p>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button id="btnCancelarRegistro" type="button"
+                        class="px-3 py-1.5 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-1.5 bg-indigo-600 text-white rounded font-semibold hover:bg-indigo-500 cursor-pointer">
+                        Guardar Usuario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const formLogin = document.getElementById("formLogin");
             const btnRegistrar = document.getElementById("btnRegistrar");
+            const modalRegistro = document.getElementById("modalRegistro");
+            const btnCerrarModal = document.getElementById("btnCerrarModal");
+            const btnCancelarRegistro = document.getElementById("btnCancelarRegistro");
+            const formRegistro = document.getElementById("formRegistro");
+            const regRol = document.getElementById("regRol");
+            const contenedorClaveAdmin = document.getElementById("contenedorClaveAdmin");
+            const regClaveAdmin = document.getElementById("regClaveAdmin");
+            const estadoCupoAdmin = document.getElementById("estadoCupoAdmin");
 
-            // Credencial por defecto si no hay ninguna registrada
-            if (!localStorage.getItem("usuario_sistema")) {
-                localStorage.setItem("usuario_sistema", JSON.stringify({ user: "admin", pass: "1234" }));
+            const ROLES_VALIDOS = ["administrador", "usuario", "lector"];
+            const CLAVE_MAESTRA_ADMIN = "ADMIN-2026";
+            const MAX_ADMINISTRADORES = 3;
+
+            function obtenerUsuarios() {
+                let lista = JSON.parse(localStorage.getItem("usuarios_sistema"));
+                if (!Array.isArray(lista) || lista.length === 0) {
+                    const legado = JSON.parse(localStorage.getItem("usuario_sistema"));
+                    if (legado && legado.user && legado.pass) {
+                        lista = [{
+                            user: legado.user,
+                            email: legado.email || "admin@gestordocumental.local",
+                            pass: legado.pass,
+                            rol: ROLES_VALIDOS.includes(legado.rol) ? legado.rol : "administrador"
+                        }];
+                    } else {
+                        lista = [{
+                            user: "admin",
+                            email: "admin@gestordocumental.local",
+                            pass: "1234",
+                            rol: "administrador"
+                        }];
+                    }
+                    localStorage.setItem("usuarios_sistema", JSON.stringify(lista));
+                }
+                return lista;
             }
 
-            // Manejar el inicio de sesión
+            function contarAdministradores(usuariosLista) {
+                return usuariosLista.filter(u => u.rol === "administrador").length;
+            }
+
+            function actualizarVistaRolAdmin() {
+                const esAdmin = regRol.value === "administrador";
+                const totalAdmins = contarAdministradores(obtenerUsuarios());
+
+                if (esAdmin) {
+                    contenedorClaveAdmin.classList.remove("hidden");
+                    regClaveAdmin.required = true;
+                    estadoCupoAdmin.textContent = `Administradores registrados: ${totalAdmins} de ${MAX_ADMINISTRADORES}.`;
+                } else {
+                    contenedorClaveAdmin.classList.add("hidden");
+                    regClaveAdmin.required = false;
+                    regClaveAdmin.value = "";
+                    estadoCupoAdmin.textContent = "";
+                }
+            }
+
+            obtenerUsuarios();
+
+            function esCorreoReal(correo) {
+                const limpio = correo.trim().toLowerCase();
+                const regexBasico = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,10}$/;
+                if (!regexBasico.test(limpio)) {
+                    return { valido: false, motivo: "El formato del correo electrónico no es válido." };
+                }
+
+                const [parteLocal, dominio] = limpio.split("@");
+                const dominiosFalsos = [
+                    "test.com", "prueba.com", "fake.com", "falso.com", "correo.com",
+                    "example.com", "ejemplo.com", "temp.com", "tempmail.com", "mailinator.com",
+                    "10minutemail.com", "guerrillamail.com", "yopmail.com", "asdf.com",
+                    "qwerty.com", "abc.com", "xyz.com", "ninguno.com", "no.com", "sin.com"
+                ];
+
+                if (dominiosFalsos.includes(dominio)) {
+                    return { valido: false, motivo: "No se permiten correos de prueba o dominios ficticios." };
+                }
+
+                const localesFalsos = ["test", "prueba", "fake", "falso", "asdf", "qwerty", "admin123", "correo", "sin correo", "no tiene", "123", "1234", "12345"];
+                if (localesFalsos.includes(parteLocal) || /^(.)\1{2,}$/.test(parteLocal)) {
+                    return { valido: false, motivo: "Ingrese un correo electrónico real y no un dato de prueba." };
+                }
+
+                const tld = dominio.split(".").pop();
+                if (["test", "local", "invalid", "example", "fake"].includes(tld)) {
+                    return { valido: false, motivo: "El dominio del correo no parece real." };
+                }
+
+                return { valido: true, correo: limpio };
+            }
+
+            function abrirModal() {
+                formRegistro.reset();
+                actualizarVistaRolAdmin();
+                modalRegistro.classList.remove("hidden");
+                modalRegistro.classList.add("flex");
+                document.getElementById("regUsuario").focus();
+            }
+
+            function cerrarModal() {
+                modalRegistro.classList.add("hidden");
+                modalRegistro.classList.remove("flex");
+            }
+
+            regRol.addEventListener("change", actualizarVistaRolAdmin);
+            btnRegistrar.addEventListener("click", abrirModal);
+            btnCerrarModal.addEventListener("click", cerrarModal);
+            btnCancelarRegistro.addEventListener("click", cerrarModal);
+
             formLogin.addEventListener("submit", (e) => {
                 e.preventDefault();
                 const userIngresado = document.getElementById("usuario").value.trim();
                 const passIngresado = document.getElementById("password").value.trim();
+                const rolSeleccionado = document.getElementById("rolIngreso").value;
 
-                const datosGuardados = JSON.parse(localStorage.getItem("usuario_sistema"));
+                const usuarios = obtenerUsuarios();
+                const encontrado = usuarios.find(
+                    u => (u.user === userIngresado || u.email === userIngresado.toLowerCase()) && u.pass === passIngresado
+                );
 
-                if (datosGuardados && datosGuardados.user === userIngresado && datosGuardados.pass === passIngresado) {
-                    // Guardar sesión activa y redirigir al indexamiento
-                    localStorage.setItem("sesion_activa", "true");
-                    window.location.href = "index.html";
-                } else {
+                if (!encontrado) {
                     alert("⚠ Usuario o contraseña incorrectos.");
+                    return;
                 }
+
+                const rolReal = ROLES_VALIDOS.includes(encontrado.rol) ? encontrado.rol : "usuario";
+                if (rolReal !== rolSeleccionado) {
+                    alert(`⚠ Este usuario tiene asignado el rol "${rolReal}". Seleccione "${rolReal}" para ingresar.`);
+                    return;
+                }
+
+                localStorage.setItem("sesion_activa", "true");
+                localStorage.setItem("sesion_usuario", JSON.stringify({
+                    user: encontrado.user,
+                    email: encontrado.email,
+                    rol: rolReal
+                }));
+                localStorage.setItem("usuario_sistema", JSON.stringify({
+                    user: encontrado.user,
+                    email: encontrado.email,
+                    pass: encontrado.pass,
+                    rol: rolReal
+                }));
+                window.location.href = "index.html";
             });
 
-            // Registrar nuevo usuario de forma sencilla
-            btnRegistrar.addEventListener("click", () => {
-                const nuevoUser = prompt("Crea tu nuevo nombre de usuario:");
-                if (!nuevoUser) return;
-                const nuevoPass = prompt("Crea tu contraseña:");
-                if (!nuevoPass) return;
+            formRegistro.addEventListener("submit", (e) => {
+                e.preventDefault();
+                const nuevoUser = document.getElementById("regUsuario").value.trim();
+                const correoInput = document.getElementById("regCorreo").value.trim();
+                const nuevoPass = document.getElementById("regPassword").value.trim();
+                const nuevoRol = regRol.value;
+                const claveAdminIngresada = regClaveAdmin.value.trim();
 
-                localStorage.setItem("usuario_sistema", JSON.stringify({ user: nuevoUser, pass: nuevoPass }));
-                alert("✔ ¡Usuario registrado con éxito! Ahora puedes iniciar sesión.");
+                if (nuevoUser.length < 3) {
+                    alert("⚠ El nombre de usuario debe tener al menos 3 caracteres.");
+                    return;
+                }
+
+                const validacionCorreo = esCorreoReal(correoInput);
+                if (!validacionCorreo.valido) {
+                    alert(`⚠ ${validacionCorreo.motivo}`);
+                    return;
+                }
+
+                if (nuevoPass.length < 4) {
+                    alert("⚠ La contraseña debe tener al menos 4 caracteres.");
+                    return;
+                }
+
+                if (!ROLES_VALIDOS.includes(nuevoRol)) {
+                    alert("⚠ Seleccione un rol válido (administrador, usuario o lector).");
+                    return;
+                }
+
+                const usuarios = obtenerUsuarios();
+
+                if (nuevoRol === "administrador") {
+                    const totalAdmins = contarAdministradores(usuarios);
+                    if (totalAdmins >= MAX_ADMINISTRADORES) {
+                        alert(`⚠ Ya se alcanzó el límite máximo de ${MAX_ADMINISTRADORES} administradores.`);
+                        return;
+                    }
+                    if (claveAdminIngresada !== CLAVE_MAESTRA_ADMIN) {
+                        alert("⚠ Clave maestra de administrador incorrecta. No se puede crear la cuenta.");
+                        return;
+                    }
+                }
+
+                const yaExiste = usuarios.some(
+                    u => u.user.toLowerCase() === nuevoUser.toLowerCase() || u.email.toLowerCase() === validacionCorreo.correo
+                );
+                if (yaExiste) {
+                    alert("⚠ Ya existe un usuario registrado con ese nombre o correo electrónico.");
+                    return;
+                }
+
+                const nuevoRegistro = {
+                    user: nuevoUser,
+                    email: validacionCorreo.correo,
+                    pass: nuevoPass,
+                    rol: nuevoRol
+                };
+
+                usuarios.push(nuevoRegistro);
+                localStorage.setItem("usuarios_sistema", JSON.stringify(usuarios));
+                localStorage.setItem("usuario_sistema", JSON.stringify(nuevoRegistro));
+                document.getElementById("rolIngreso").value = nuevoRol;
+
+                cerrarModal();
+                alert(`✔ ¡Usuario "${nuevoUser}" registrado con rol "${nuevoRol}"! Ahora puedes iniciar sesión.`);
             });
         });
     </script>

@@ -5,7 +5,7 @@
 
         const path = window.location.pathname;
 
-        // Detectar en qué página estamos para resaltar la opción activa
+
         const isBusqueda = path.includes("busqueda.html");
         const isIndex = path.includes("index.html") || path.endsWith("/") || path.endsWith("gestordocumental/");
         const isReporte = path.includes("reporte.html");
@@ -27,7 +27,7 @@
             </div>
         `;
 
-        // Configurar el evento del botón salir
+
         const btnSalir = document.getElementById("menuSalir");
         if (btnSalir) {
             btnSalir.addEventListener("click", () => {

@@ -1,4 +1,4 @@
-// ai-extractor.js
+
 class AIExtractorButton {
     constructor(containerSelector) {
         this.container = document.querySelector(containerSelector);
@@ -8,15 +8,15 @@ class AIExtractorButton {
     init() {
         if (!this.container) return;
 
-        // Crear el botón dinámicamente con estilos limpios
+
         const btn = document.createElement('button');
         btn.id = 'btnAiExtract';
         btn.innerHTML = '✨ Autocompletar con IA';
         btn.style.cssText = 'background-color: #4A90E2; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 10px;';
-        
+
         btn.onclick = () => this.analizarDocumento(btn);
 
-        // Insertarlo en el contenedor que elijas (por ejemplo, el header del metadata)
+
         this.container.appendChild(btn);
     }
 
@@ -25,7 +25,7 @@ class AIExtractorButton {
         btn.disabled = true;
 
         try {
-            // Aquí llamas a tu endpoint en Java/Backend que procesa el PDF con Gemini de forma efímera
+
             const response = await fetch('/api/gemini/analizar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -35,7 +35,7 @@ class AIExtractorButton {
             const data = await response.json();
 
             if (data && !data.error) {
-                // Rellenar automáticamente los inputs de tu interfaz
+
                 document.querySelector('input[name="fecha_procesamiento"]').value = data.fecha_procesamiento || '';
                 document.querySelector('input[name="fecha_contrato"]').value = data.fecha_contrato || '';
                 document.querySelector('input[name="numero_distribuidor"]').value = data.numero_distribuidor || '';

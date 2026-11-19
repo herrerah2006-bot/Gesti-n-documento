@@ -1,28 +1,26 @@
-// ==========================================
-// MÓDULO AUXILIAR: GESTIÓN DE PDF Y MAGIA
-// ==========================================
+
 
 class GestorPdfContrato {
-    
-    // Función que captura el PDF actual al momento de indexar
+
+
     static guardarPdfAlIndexar(nroContrato, nombreCliente, listaDeArchivos) {
         if (listaDeArchivos && listaDeArchivos.length > 0) {
             const docActual = listaDeArchivos[0];
             if (docActual && docActual.url) {
                 const folioLimpio = nroContrato ? nroContrato.trim() : "S_N";
                 const claveUnica = "pdf_contrato_" + folioLimpio;
-                
-                // Guardamos el PDF de forma segura en localStorage y sessionStorage
+
+
                 localStorage.setItem(claveUnica, docActual.url);
                 sessionStorage.setItem("pdf_para_reporte", docActual.url);
                 sessionStorage.setItem("nombre_archivo_reporte", `${folioLimpio} ${nombreCliente}.pdf`);
-                
+
                 console.log("✔ PDF del contrato guardado correctamente para el folio:", folioLimpio);
             }
         }
     }
 
-    // Función que abre y renderiza el PDF en el módulo de Reportes con su nombre Folio + Cliente
+
     static abrirVisorReporte(registros) {
         if (!registros || registros.length === 0) {
             alert("⚠ No hay registros indexados para generar el documento.");
@@ -34,7 +32,7 @@ class GestorPdfContrato {
         let cliente = primerReg.nombreCliente || 'Cliente';
         let nombreArchivoFinal = folio + " " + cliente;
 
-        // Buscamos el PDF utilizando la clave única del contrato o el respaldo de sesión
+
         let pdfUrl = localStorage.getItem("pdf_contrato_" + folio.trim()) || sessionStorage.getItem("pdf_para_reporte") || primerReg.pdfUrl;
 
         let ventanaImpresion = window.open('', '_blank');
@@ -60,7 +58,7 @@ class GestorPdfContrato {
             html += '</div>';
         }
 
-      html += '</body></html>';
+        html += '</body></html>';
         ventanaImpresion.document.write(html);
         ventanaImpresion.document.close();
     }
