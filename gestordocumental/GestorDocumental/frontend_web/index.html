@@ -14,46 +14,47 @@
 
 <body class="bg-gray-100 h-screen flex flex-col overflow-hidden text-xs">
 
-
     <header class="bg-slate-800 text-white h-10 flex items-center justify-between px-6">
         <div class="flex space-x-6">
             <span class="font-bold text-white border-b-2 border-indigo-400 pb-0.5 cursor-pointer">Contratos</span>
-
         </div>
-        <div class="flex items-center space-x-4">
-            <span class="text-gray-300 text-[11px]">Admin (Henry)</span>
-            <div class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center font-bold text-xs">H</div>
+        <div class="flex items-center space-x-3">
+            <span id="headerUsuarioTexto" class="text-gray-300 text-[11px]">Usuario</span>
+            <span id="headerRolBadge"
+                class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-700 text-gray-200">rol</span>
+            <div id="headerInicialAvatar"
+                class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center font-bold text-xs">U</div>
         </div>
     </header>
 
-
-    <div class="bg-white border-b border-gray-300 px-6 py-1.5 flex items-center justify-between text-[11px]">
-
-        <div></div>
-
-
-        <div class="flex space-x-2 items-center justify-end">
-            <span id="btnIndexadoSuperior" class="boton-estandar cursor-pointer inline-block text-center">Contrato
-                Indexado (ok)</span>
-            <span id="btnImportar" class="boton-estandar cursor-pointer inline-block text-center">Importar documentos
-                escaneados</span>
+    <div class="bg-white border-b border-gray-300 px-4 py-1 flex items-center justify-between text-[11px]">
+        <div id="avisoRolIndex" class="text-gray-500 truncate"></div>
+        <div class="flex items-center gap-1 justify-end">
+            <span id="btnIndexadoSuperior"
+                class="boton-estandar cursor-pointer inline-block text-center whitespace-nowrap shrink-0 px-1.5 py-0.5 text-[10px]">Indexar
+                (ok)</span>
+            <span id="btnImportar"
+                class="boton-estandar cursor-pointer inline-block text-center whitespace-nowrap shrink-0 px-1.5 py-0.5 text-[10px]">Importar
+                PDF</span>
             <input type="file" id="inputArchivoPdf" accept=".pdf" class="hidden" style="display: none;">
+            <button id="btnAdminReiniciarContador" type="button"
+                class="hidden bg-indigo-600 text-white px-1.5 py-0.5 rounded text-[10px] font-medium hover:bg-indigo-500 cursor-pointer whitespace-nowrap shrink-0">Reset
+                0</button>
+            <button id="btnAdminLimpiarCola" type="button"
+                class="hidden bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px] font-medium hover:bg-red-500 cursor-pointer whitespace-nowrap shrink-0">Borrar
+                Cola</button>
+            <button id="btnAdminHistorialIndex" type="button"
+                class="hidden bg-amber-600 text-white px-1.5 py-0.5 rounded text-[10px] font-medium hover:bg-amber-500 cursor-pointer whitespace-nowrap shrink-0">Historial</button>
         </div>
     </div>
-
+    </div>
 
     <div class="flex-1 flex overflow-hidden">
 
-
         <aside class="flex bg-white border-r border-gray-300 overflow-y-auto">
 
-
-
-
             <aside class="flex bg-white border-r border-gray-300 overflow-y-auto" id="nav-container">
-
             </aside>
-
 
             <div class="w-80 p-3 space-y-2 flex flex-col">
 
@@ -61,7 +62,6 @@
                     <p class="font-bold text-[11px] mb-0.5">Documentos</p>
                     <div id="listaDocumentos" class="text-[10px] text-blue-300 space-y-0.5"></div>
                 </div>
-
 
                 <div
                     class="metadata-header bg-black text-white font-bold p-1 px-2 text-[11px] flex items-center justify-between">
@@ -75,7 +75,6 @@
                         <input type="date" id="fechaProceso" readonly
                             class="w-3/5 px-2 py-0.5 border border-gray-300 rounded bg-gray-100 cursor-not-allowed">
                     </div>
-
 
                     <script>
                         const inputFP = document.getElementById('fechaProceso');
@@ -136,7 +135,6 @@
                             class="w-3/5 px-2 py-0.5 border border-gray-300 rounded bg-white font-medium focus:ring-1 focus:ring-blue-500">
                     </div>
 
-
                     <div class="pt-2 border-t mt-2 space-y-1.5">
                         <span id="btnIndexadoPanel" class="boton-estandar block text-center cursor-pointer">
                             Contrato Indexado (ok)
@@ -146,14 +144,11 @@
                             <span>▶ NO: <span id="contadorNo">0</span></span>
                             <span class="text-blue-600 font-bold">▶ SI: <span id="contadorSi">0</span></span>
                         </div>
-
-
                     </div>
                 </form>
             </div>
 
         </aside>
-
 
         <main class="flex-1 bg-slate-200 flex flex-col">
             <div class="bg-slate-900 text-white h-10 px-4 flex items-center justify-between text-xs">
@@ -186,17 +181,179 @@
 
     </div>
 
+    <!-- Modal Historial de Borrados -->
+    <div id="modalHistorialIndex" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 px-4">
+        <div
+            class="bg-white p-5 rounded-lg shadow-xl w-full max-w-2xl border border-gray-200 text-xs max-h-[80vh] flex flex-col">
+            <div class="flex items-center justify-between border-b pb-2 mb-3">
+                <h3 class="font-bold text-slate-800 text-sm">Historial de Borrados y Reinicios (Restaurar)</h3>
+                <button id="btnCerrarHistorialIndex" type="button"
+                    class="text-gray-400 hover:text-gray-700 cursor-pointer">✕</button>
+            </div>
+            <div id="listaHistorialIndex" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
+        </div>
+    </div>
 
     <script src="js/botones.js"></script>
     <script src="js/script.js"></script>
     <script src="js/nav.js"></script>
     <script src="js/indexamiento.js"></script>
-
     <script src="./js/ai-extractor.js"></script>
-    <script>
 
+    <script>
         document.addEventListener("DOMContentLoaded", () => {
             new AIExtractorButton('.metadata-header');
+
+            let sesion = null;
+            try { sesion = JSON.parse(localStorage.getItem("sesion_usuario")); } catch { }
+
+            const rol = sesion && sesion.rol ? sesion.rol : "lector";
+            const esAdmin = rol === "administrador";
+            const esLector = rol === "lector";
+            const nombreMostrar = sesion && sesion.user ? sesion.user : "Usuario";
+
+            document.getElementById("headerUsuarioTexto").textContent = nombreMostrar;
+            document.getElementById("headerRolBadge").textContent = rol;
+            document.getElementById("headerInicialAvatar").textContent = nombreMostrar.charAt(0).toUpperCase() || "U";
+
+            const aviso = document.getElementById("avisoRolIndex");
+            if (esAdmin) {
+                aviso.textContent = "";
+                aviso.className = "text-amber-700 font-medium";
+                document.getElementById("btnAdminReiniciarContador").classList.remove("hidden");
+                document.getElementById("btnAdminLimpiarCola").classList.remove("hidden");
+                document.getElementById("btnAdminHistorialIndex").classList.remove("hidden");
+
+                // Sin restricciones de fecha de proceso para administrador
+                const fp = document.getElementById("fechaProceso");
+                if (fp) {
+                    fp.readOnly = false;
+                    fp.classList.remove("bg-gray-100", "cursor-not-allowed");
+                    fp.classList.add("bg-white");
+                }
+            } else if (esLector) {
+                aviso.textContent = "Modo Lector: solo consulta/lectura (indexación y edición deshabilitadas).";
+                aviso.className = "text-slate-600 font-medium";
+                document.querySelectorAll("#formIndexacion input, #formIndexacion textarea, #formIndexacion select").forEach(el => {
+                    el.disabled = true;
+                });
+                ["btnIndexadoSuperior", "btnIndexadoPanel", "btnImportar"].forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) {
+                        btn.style.pointerEvents = "none";
+                        btn.style.opacity = "0.5";
+                    }
+                });
+            } else {
+                aviso.textContent = "Modo Usuario: operación de indexación habilitada.";
+            }
+
+            function guardarHistorial(tipo, detalle, datos) {
+                const hist = JSON.parse(localStorage.getItem("historial_borrados")) || [];
+                hist.unshift({
+                    id: Date.now(),
+                    origen: "indexamiento",
+                    tipo,
+                    detalle,
+                    usuario: nombreMostrar,
+                    rol,
+                    fecha: new Date().toLocaleString(),
+                    datos
+                });
+                localStorage.setItem("historial_borrados", JSON.stringify(hist));
+            }
+
+            // Reiniciar contador global a 0
+            document.getElementById("btnAdminReiniciarContador")?.addEventListener("click", () => {
+                if (!esAdmin) return;
+                const actual = parseInt(localStorage.getItem("contadorGlobalSi") || "0", 10);
+                if (!confirm(`¿Reiniciar el contador global SI (actual: ${actual}) a 0?`)) return;
+                guardarHistorial("contador", `Reinicio contadorGlobalSi (era ${actual}) a 0`, { anterior: actual });
+                localStorage.setItem("contadorGlobalSi", 0);
+                const spanSi = document.getElementById("contadorSi");
+                if (spanSi) spanSi.innerText = 0;
+                alert("✔ Contador global reiniciado a 0.");
+            });
+
+            // Borrar cola de documentos pendientes
+            document.getElementById("btnAdminLimpiarCola")?.addEventListener("click", () => {
+                if (!esAdmin) return;
+                const cola = JSON.parse(localStorage.getItem("lista_de_archivos_sesion")) || [];
+                if (cola.length === 0) {
+                    alert("No hay documentos pendientes en la cola.");
+                    return;
+                }
+                if (!confirm(`¿Borrar todos los documentos pendientes (${cola.length}) de la cola? Quedarán en el historial.`)) return;
+                guardarHistorial("tabla", `Cola de documentos pendientes (${cola.length} archivos)`, cola);
+                localStorage.setItem("lista_de_archivos_sesion", JSON.stringify([]));
+                location.reload();
+            });
+
+            // Historial y restauración
+            const modalHist = document.getElementById("modalHistorialIndex");
+            function renderHistorialIndex() {
+                const cont = document.getElementById("listaHistorialIndex");
+                const hist = JSON.parse(localStorage.getItem("historial_borrados")) || [];
+                if (hist.length === 0) {
+                    cont.innerHTML = `<p class="text-center text-gray-500 py-6">No hay registros en el historial de borrados.</p>`;
+                    return;
+                }
+                cont.innerHTML = hist.map(item => `
+                    <div class="border rounded p-2.5 bg-slate-50 flex items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-slate-800">[${item.tipo.toUpperCase()}] ${item.detalle}</div>
+                            <div class="text-[10px] text-gray-500">Por: ${item.usuario} (${item.rol}) — ${item.fecha}</div>
+                        </div>
+                        <button type="button" data-id="${item.id}"
+                            class="btn-restaurar-idx px-2.5 py-1 bg-emerald-600 text-white rounded text-[10px] font-semibold hover:bg-emerald-500 cursor-pointer">
+                            Restaurar
+                        </button>
+                    </div>
+                `).join("");
+
+                cont.querySelectorAll(".btn-restaurar-idx").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        const idNum = Number(btn.getAttribute("data-id"));
+                        const histActual = JSON.parse(localStorage.getItem("historial_borrados")) || [];
+                        const idx = histActual.findIndex(h => h.id === idNum);
+                        if (idx === -1) return;
+                        const entry = histActual[idx];
+
+                        if (entry.tipo === "contador" && entry.datos && typeof entry.datos.anterior !== "undefined") {
+                            localStorage.setItem("contadorGlobalSi", entry.datos.anterior);
+                            const spanSi = document.getElementById("contadorSi");
+                            if (spanSi) spanSi.innerText = entry.datos.anterior;
+                        } else if (entry.origen === "indexamiento" && entry.tipo === "tabla" && Array.isArray(entry.datos)) {
+                            localStorage.setItem("lista_de_archivos_sesion", JSON.stringify(entry.datos));
+                        } else if (entry.tipo === "fila" && entry.datos) {
+                            const actuales = JSON.parse(localStorage.getItem("contratos_indexados")) || [];
+                            actuales.push(entry.datos);
+                            localStorage.setItem("contratos_indexados", JSON.stringify(actuales));
+                        } else if (entry.tipo === "tabla" && Array.isArray(entry.datos)) {
+                            const actuales = JSON.parse(localStorage.getItem("contratos_indexados")) || [];
+                            localStorage.setItem("contratos_indexados", JSON.stringify([...actuales, ...entry.datos]));
+                        }
+
+                        histActual.splice(idx, 1);
+                        localStorage.setItem("historial_borrados", JSON.stringify(histActual));
+                        renderHistorialIndex();
+                        alert("✔ Registro restaurado con éxito.");
+                    });
+                });
+            }
+
+            document.getElementById("btnAdminHistorialIndex")?.addEventListener("click", () => {
+                if (!esAdmin) return;
+                renderHistorialIndex();
+                modalHist.classList.remove("hidden");
+                modalHist.classList.add("flex");
+            });
+
+            document.getElementById("btnCerrarHistorialIndex")?.addEventListener("click", () => {
+                modalHist.classList.add("hidden");
+                modalHist.classList.remove("flex");
+                location.reload();
+            });
         });
     </script>
 </body>

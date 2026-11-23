@@ -30,20 +30,12 @@
                     class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
 
-            <div>
-                <label class="block font-medium text-gray-700 mb-1">Ingresar como:</label>
-                <select id="rolIngreso" required
-                    class="w-full px-3 py-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="administrador">administrador</option>
-                    <option value="usuario">usuario</option>
-                    <option value="lector">lector</option>
-                </select>
-            </div>
-
             <button type="submit"
                 class="w-full bg-indigo-600 text-white py-2 rounded font-semibold hover:bg-indigo-500 transition-colors cursor-pointer">
                 Iniciar Sesión
             </button>
+
+            <p id="mensajeLoginError" class="hidden text-center text-red-600 font-medium text-[11px] pt-1"></p>
         </form>
 
         <div class="mt-4 text-center border-t pt-3">
@@ -59,27 +51,15 @@
     <div id="modalRegistro" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 px-4">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm border border-gray-200">
             <div class="flex items-center justify-between mb-4 border-b pb-2">
-                <h2 class="text-sm font-bold text-slate-800">Registrar Nuevo Usuario</h2>
+                <h2 class="text-sm font-bold text-slate-800">Solicitar Nuevo Usuario</h2>
                 <button id="btnCerrarModal" type="button"
                     class="text-gray-400 hover:text-gray-700 text-sm cursor-pointer">✕</button>
             </div>
 
             <form id="formRegistro" class="space-y-3 text-xs">
                 <div>
-                    <label class="block font-medium text-gray-700 mb-1">Nombre de usuario / Cédula:</label>
-                    <input type="text" id="regUsuario" required minlength="3" placeholder="Ej. jperez"
-                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-
-                <div>
                     <label class="block font-medium text-gray-700 mb-1">Correo electrónico real:</label>
                     <input type="email" id="regCorreo" required placeholder="Ej. nombre@empresa.com"
-                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Contraseña:</label>
-                    <input type="password" id="regPassword" required minlength="4" placeholder="Mínimo 4 caracteres"
                         class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
 
@@ -93,14 +73,6 @@
                     </select>
                 </div>
 
-
-                <div id="contenedorClaveAdmin" class="hidden">
-                    <label class="block font-medium text-amber-800 mb-1">Clave maestra de administrador:</label>
-                    <input type="password" id="regClaveAdmin" placeholder="Ingrese clave maestra"
-                        class="w-full px-3 py-1.5 border border-amber-400 rounded bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                    <p id="estadoCupoAdmin" class="text-[10px] text-gray-500 mt-1"></p>
-                </div>
-
                 <div class="flex justify-end space-x-2 pt-3 border-t">
                     <button id="btnCancelarRegistro" type="button"
                         class="px-3 py-1.5 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 cursor-pointer">
@@ -108,7 +80,7 @@
                     </button>
                     <button type="submit"
                         class="px-4 py-1.5 bg-indigo-600 text-white rounded font-semibold hover:bg-indigo-500 cursor-pointer">
-                        Guardar Usuario
+                        Solicitar
                     </button>
                 </div>
             </form>
@@ -118,65 +90,31 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const formLogin = document.getElementById("formLogin");
+            const mensajeLoginError = document.getElementById("mensajeLoginError");
             const btnRegistrar = document.getElementById("btnRegistrar");
             const modalRegistro = document.getElementById("modalRegistro");
             const btnCerrarModal = document.getElementById("btnCerrarModal");
             const btnCancelarRegistro = document.getElementById("btnCancelarRegistro");
             const formRegistro = document.getElementById("formRegistro");
             const regRol = document.getElementById("regRol");
-            const contenedorClaveAdmin = document.getElementById("contenedorClaveAdmin");
-            const regClaveAdmin = document.getElementById("regClaveAdmin");
-            const estadoCupoAdmin = document.getElementById("estadoCupoAdmin");
 
             const ROLES_VALIDOS = ["administrador", "usuario", "lector"];
-            const CLAVE_MAESTRA_ADMIN = "ADMIN-2026";
-            const MAX_ADMINISTRADORES = 3;
 
-            function obtenerUsuarios() {
-                let lista = JSON.parse(localStorage.getItem("usuarios_sistema"));
-                if (!Array.isArray(lista) || lista.length === 0) {
-                    const legado = JSON.parse(localStorage.getItem("usuario_sistema"));
-                    if (legado && legado.user && legado.pass) {
-                        lista = [{
-                            user: legado.user,
-                            email: legado.email || "admin@gestordocumental.local",
-                            pass: legado.pass,
-                            rol: ROLES_VALIDOS.includes(legado.rol) ? legado.rol : "administrador"
-                        }];
-                    } else {
-                        lista = [{
-                            user: "admin",
-                            email: "admin@gestordocumental.local",
-                            pass: "1234",
-                            rol: "administrador"
-                        }];
-                    }
-                    localStorage.setItem("usuarios_sistema", JSON.stringify(lista));
-                }
-                return lista;
+            function obtenerUrlBaseBackend() {
+                return (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port === "8080"
+                    ? ""
+                    : "http://localhost:8080";
             }
 
-            function contarAdministradores(usuariosLista) {
-                return usuariosLista.filter(u => u.rol === "administrador").length;
+            function mostrarErrorLogin(texto) {
+                mensajeLoginError.textContent = texto;
+                mensajeLoginError.classList.remove("hidden");
             }
 
-            function actualizarVistaRolAdmin() {
-                const esAdmin = regRol.value === "administrador";
-                const totalAdmins = contarAdministradores(obtenerUsuarios());
-
-                if (esAdmin) {
-                    contenedorClaveAdmin.classList.remove("hidden");
-                    regClaveAdmin.required = true;
-                    estadoCupoAdmin.textContent = `Administradores registrados: ${totalAdmins} de ${MAX_ADMINISTRADORES}.`;
-                } else {
-                    contenedorClaveAdmin.classList.add("hidden");
-                    regClaveAdmin.required = false;
-                    regClaveAdmin.value = "";
-                    estadoCupoAdmin.textContent = "";
-                }
+            function ocultarErrorLogin() {
+                mensajeLoginError.textContent = "";
+                mensajeLoginError.classList.add("hidden");
             }
-
-            obtenerUsuarios();
 
             function esCorreoReal(correo) {
                 const limpio = correo.trim().toLowerCase();
@@ -212,10 +150,9 @@
 
             function abrirModal() {
                 formRegistro.reset();
-                actualizarVistaRolAdmin();
                 modalRegistro.classList.remove("hidden");
                 modalRegistro.classList.add("flex");
-                document.getElementById("regUsuario").focus();
+                document.getElementById("regCorreo").focus();
             }
 
             function cerrarModal() {
@@ -223,69 +160,61 @@
                 modalRegistro.classList.remove("flex");
             }
 
-            regRol.addEventListener("change", actualizarVistaRolAdmin);
             btnRegistrar.addEventListener("click", abrirModal);
             btnCerrarModal.addEventListener("click", cerrarModal);
             btnCancelarRegistro.addEventListener("click", cerrarModal);
 
-            formLogin.addEventListener("submit", (e) => {
+            formLogin.addEventListener("submit", async (e) => {
                 e.preventDefault();
                 const userIngresado = document.getElementById("usuario").value.trim();
                 const passIngresado = document.getElementById("password").value.trim();
-                const rolSeleccionado = document.getElementById("rolIngreso").value;
 
-                const usuarios = obtenerUsuarios();
-                const encontrado = usuarios.find(
-                    u => (u.user === userIngresado || u.email === userIngresado.toLowerCase()) && u.pass === passIngresado
-                );
+                ocultarErrorLogin();
 
-                if (!encontrado) {
-                    alert("⚠ Usuario o contraseña incorrectos.");
-                    return;
+                try {
+                    const resp = await fetch(`${obtenerUrlBaseBackend()}/api/usuarios/login`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            usuario: userIngresado,
+                            contrasena: passIngresado
+                        })
+                    });
+
+                    const data = await resp.json().catch(() => ({}));
+
+                    if (data.motivo === "inactivo" || Number(data.activo) === 0) {
+                        mostrarErrorLogin("⚠ Usuario no activo.");
+                        return;
+                    }
+
+                    if (!resp.ok || data.status !== "success" || Number(data.activo) !== 1) {
+                        mostrarErrorLogin("⚠ Credenciales incorrectas.");
+                        return;
+                    }
+
+                    const rolReal = ROLES_VALIDOS.includes(data.rol) ? data.rol : "usuario";
+                    localStorage.setItem("sesion_activa", "true");
+                    localStorage.setItem("sesion_usuario", JSON.stringify({
+                        user: data.usuario,
+                        email: data.correo,
+                        rol: rolReal
+                    }));
+                    window.location.href = "index.html";
+                } catch (err) {
+                    console.error("Error al iniciar sesión:", err);
+                    mostrarErrorLogin("⚠ Credenciales incorrectas.");
                 }
-
-                const rolReal = ROLES_VALIDOS.includes(encontrado.rol) ? encontrado.rol : "usuario";
-                if (rolReal !== rolSeleccionado) {
-                    alert(`⚠ Este usuario tiene asignado el rol "${rolReal}". Seleccione "${rolReal}" para ingresar.`);
-                    return;
-                }
-
-                localStorage.setItem("sesion_activa", "true");
-                localStorage.setItem("sesion_usuario", JSON.stringify({
-                    user: encontrado.user,
-                    email: encontrado.email,
-                    rol: rolReal
-                }));
-                localStorage.setItem("usuario_sistema", JSON.stringify({
-                    user: encontrado.user,
-                    email: encontrado.email,
-                    pass: encontrado.pass,
-                    rol: rolReal
-                }));
-                window.location.href = "index.html";
             });
 
-            formRegistro.addEventListener("submit", (e) => {
+            formRegistro.addEventListener("submit", async (e) => {
                 e.preventDefault();
-                const nuevoUser = document.getElementById("regUsuario").value.trim();
                 const correoInput = document.getElementById("regCorreo").value.trim();
-                const nuevoPass = document.getElementById("regPassword").value.trim();
                 const nuevoRol = regRol.value;
-                const claveAdminIngresada = regClaveAdmin.value.trim();
-
-                if (nuevoUser.length < 3) {
-                    alert("⚠ El nombre de usuario debe tener al menos 3 caracteres.");
-                    return;
-                }
 
                 const validacionCorreo = esCorreoReal(correoInput);
                 if (!validacionCorreo.valido) {
                     alert(`⚠ ${validacionCorreo.motivo}`);
-                    return;
-                }
-
-                if (nuevoPass.length < 4) {
-                    alert("⚠ La contraseña debe tener al menos 4 caracteres.");
                     return;
                 }
 
@@ -294,42 +223,35 @@
                     return;
                 }
 
-                const usuarios = obtenerUsuarios();
-
-                if (nuevoRol === "administrador") {
-                    const totalAdmins = contarAdministradores(usuarios);
-                    if (totalAdmins >= MAX_ADMINISTRADORES) {
-                        alert(`⚠ Ya se alcanzó el límite máximo de ${MAX_ADMINISTRADORES} administradores.`);
-                        return;
-                    }
-                    if (claveAdminIngresada !== CLAVE_MAESTRA_ADMIN) {
-                        alert("⚠ Clave maestra de administrador incorrecta. No se puede crear la cuenta.");
-                        return;
-                    }
-                }
-
-                const yaExiste = usuarios.some(
-                    u => u.user.toLowerCase() === nuevoUser.toLowerCase() || u.email.toLowerCase() === validacionCorreo.correo
-                );
-                if (yaExiste) {
-                    alert("⚠ Ya existe un usuario registrado con ese nombre o correo electrónico.");
-                    return;
-                }
-
-                const nuevoRegistro = {
-                    user: nuevoUser,
-                    email: validacionCorreo.correo,
-                    pass: nuevoPass,
+                const payload = {
+                    correo: validacionCorreo.correo,
                     rol: nuevoRol
                 };
 
-                usuarios.push(nuevoRegistro);
-                localStorage.setItem("usuarios_sistema", JSON.stringify(usuarios));
-                localStorage.setItem("usuario_sistema", JSON.stringify(nuevoRegistro));
-                document.getElementById("rolIngreso").value = nuevoRol;
+                try {
+                    const urlBackend = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port === "8080"
+                        ? "/api/usuarios/registro"
+                        : "http://localhost:8080/api/usuarios/registro";
 
-                cerrarModal();
-                alert(`✔ ¡Usuario "${nuevoUser}" registrado con rol "${nuevoRol}"! Ahora puedes iniciar sesión.`);
+                    const resp = await fetch(urlBackend, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await resp.json().catch(() => ({}));
+
+                    if (!resp.ok) {
+                        alert(`⚠ ${data.mensaje || "No se pudo enviar la solicitud."}`);
+                        return;
+                    }
+
+                    cerrarModal();
+                    alert(`✔ Solicitud enviada para "${validacionCorreo.correo}" con rol "${nuevoRol}". Queda pendiente de aprobación.`);
+                } catch (err) {
+                    console.error("Error al conectar con el backend:", err);
+                    alert("⚠ Error de conexión con el servidor. Verifica que el backend esté encendido.");
+                }
             });
         });
     </script>

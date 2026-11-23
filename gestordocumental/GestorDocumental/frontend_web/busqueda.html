@@ -18,14 +18,15 @@
         <div class="flex space-x-6">
             <span class="font-bold text-white border-b-2 border-indigo-400 pb-0.5 cursor-pointer">Contratos</span>
         </div>
-        <div class="flex items-center space-x-4">
-            <span class="text-gray-300 text-[11px]">Admin (Henry)</span>
-            <div class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center font-bold text-xs">H</div>
+        <div class="flex items-center space-x-3">
+            <span id="headerUsuarioTexto" class="text-gray-300 text-[11px]">Usuario</span>
+            <span id="headerRolBadge" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-700 text-gray-200">rol</span>
+            <div id="headerInicialAvatar" class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center font-bold text-xs">U</div>
         </div>
     </header>
 
     <div class="bg-white border-b border-gray-300 px-6 py-1.5 flex items-center justify-between text-[11px]">
-        <div></div>
+        <div id="avisoRolBusqueda" class="text-gray-500"></div>
         <div class="flex space-x-2 items-center justify-end">
             <a href="index.html" class="boton-estandar cursor-pointer inline-block text-center no-underline">Regresar a
                 Indexamiento</a>
@@ -38,12 +39,22 @@
         </aside>
 
         <main class="flex-1 bg-white flex flex-col p-6 overflow-auto">
-            <div class="flex items-center justify-between pb-4 border-b border-gray-300 mb-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-gray-300 mb-4">
                 <h2 class="text-base font-bold text-slate-800">Búsqueda de Contratos</h2>
-                <div class="space-x-2">
-                    <button id="btnLimpiarBusqueda"
+                <div class="flex flex-wrap gap-2">
+                    <button id="btnLimpiarBusqueda" type="button"
                         class="bg-slate-600 text-white px-3 py-1 rounded text-xs hover:bg-slate-500 cursor-pointer">Limpiar
                         Filtros</button>
+
+                    <!-- Controles exclusivos para administrador -->
+                    <button id="btnHistorialBorrados" type="button"
+                        class="hidden bg-amber-600 text-white px-3 py-1 rounded text-xs hover:bg-amber-500 cursor-pointer">
+                        Historial de Borrados
+                    </button>
+                    <button id="btnBorrarTablaContratos" type="button"
+                        class="hidden bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-500 cursor-pointer">
+                        Borrar Tabla
+                    </button>
                 </div>
             </div>
 
@@ -67,7 +78,6 @@
                 </div>
             </div>
 
-
             <div class="border border-gray-300 rounded overflow-x-auto flex-1 bg-white">
                 <table class="w-full text-left border-collapse text-[11px]">
                     <thead>
@@ -79,6 +89,7 @@
                             <th class="p-2 border-r">Cliente</th>
                             <th class="p-2 border-r">Empresa</th>
                             <th class="p-2 border-r">Observaciones</th>
+                            <th id="thAccionesAdmin" class="p-2 hidden">Acciones Admin</th>
                         </tr>
                     </thead>
                     <tbody id="tablaBusquedaBody">
@@ -92,8 +103,290 @@
 
     </div>
 
+    <!-- Modal Editar Contrato sin restricciones (Administrador) -->
+    <div id="modalEditarContrato" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 px-4">
+        <div class="bg-white p-5 rounded-lg shadow-xl w-full max-w-md border border-gray-200 text-xs">
+            <div class="flex items-center justify-between border-b pb-2 mb-3">
+                <h3 class="font-bold text-slate-800 text-sm">Editar Contrato (Sin restricciones)</h3>
+                <button id="btnCerrarEditar" type="button" class="text-gray-400 hover:text-gray-700 cursor-pointer">✕</button>
+            </div>
+            <form id="formEditarContrato" class="space-y-2.5">
+                <input type="hidden" id="editIndiceContrato">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-0.5">Fecha Proceso</label>
+                        <input type="text" id="editFechaProceso" class="w-full px-2 py-1 border rounded">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-0.5">Fecha Contrato</label>
+                        <input type="text" id="editFechaContrato" class="w-full px-2 py-1 border rounded">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-0.5">No. Distribuidor</label>
+                        <input type="text" id="editNroDistribuidor" class="w-full px-2 py-1 border rounded">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-0.5">No. Contrato</label>
+                        <input type="text" id="editNroContrato" class="w-full px-2 py-1 border rounded">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-0.5">Cliente</label>
+                    <input type="text" id="editCliente" class="w-full px-2 py-1 border rounded">
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-0.5">Empresa</label>
+                    <input type="text" id="editEmpresa" class="w-full px-2 py-1 border rounded">
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-0.5">Observaciones</label>
+                    <textarea id="editObservaciones" rows="2" class="w-full px-2 py-1 border rounded"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t">
+                    <button id="btnCancelarEditar" type="button" class="px-3 py-1 border rounded text-gray-700 hover:bg-gray-100 cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-3 py-1 bg-indigo-600 text-white rounded font-semibold hover:bg-indigo-500 cursor-pointer">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Historial de Borrados (Restaurar borrados accidentales) -->
+    <div id="modalHistorialBorrados" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 px-4">
+        <div class="bg-white p-5 rounded-lg shadow-xl w-full max-w-2xl border border-gray-200 text-xs max-h-[80vh] flex flex-col">
+            <div class="flex items-center justify-between border-b pb-2 mb-3">
+                <h3 class="font-bold text-slate-800 text-sm">Historial de Borrados (Respaldo y Restauración)</h3>
+                <button id="btnCerrarHistorial" type="button" class="text-gray-400 hover:text-gray-700 cursor-pointer">✕</button>
+            </div>
+            <div id="listaHistorialBorrados" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
+        </div>
+    </div>
+
     <script src="js/nav.js"></script>
     <script src="js/busqueda.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            let sesion = null;
+            try { sesion = JSON.parse(localStorage.getItem("sesion_usuario")); } catch {}
+
+            const rol = sesion && sesion.rol ? sesion.rol : "lector";
+            const esAdmin = rol === "administrador";
+            const nombreMostrar = sesion && sesion.user ? sesion.user : "Usuario";
+
+            document.getElementById("headerUsuarioTexto").textContent = nombreMostrar;
+            document.getElementById("headerRolBadge").textContent = rol;
+            document.getElementById("headerInicialAvatar").textContent = nombreMostrar.charAt(0).toUpperCase() || "U";
+
+            const avisoRol = document.getElementById("avisoRolBusqueda");
+            if (esAdmin) {
+                avisoRol.textContent = "Modo Administrador: puedes editar sin restricciones, borrar filas/tablas y restaurar borrados.";
+                avisoRol.className = "text-amber-700 font-medium";
+                document.getElementById("btnHistorialBorrados").classList.remove("hidden");
+                document.getElementById("btnBorrarTablaContratos").classList.remove("hidden");
+                document.getElementById("thAccionesAdmin").classList.remove("hidden");
+            } else if (rol === "usuario") {
+                avisoRol.textContent = "Modo Usuario: consulta y búsqueda operativa (edición y borrado restringidos a administrador).";
+            } else {
+                avisoRol.textContent = "Modo Lector: solo consulta de registros.";
+            }
+
+            function guardarHistorial(tipo, detalle, datos) {
+                const hist = JSON.parse(localStorage.getItem("historial_borrados")) || [];
+                hist.unshift({
+                    id: Date.now(),
+                    origen: "contratos_indexados",
+                    tipo,
+                    detalle,
+                    usuario: nombreMostrar,
+                    rol,
+                    fecha: new Date().toLocaleString(),
+                    datos
+                });
+                localStorage.setItem("historial_borrados", JSON.stringify(hist));
+            }
+
+            function obtenerContratos() {
+                return JSON.parse(localStorage.getItem("contratos_indexados")) || [];
+            }
+
+            function guardarContratos(lista) {
+                localStorage.setItem("contratos_indexados", JSON.stringify(lista));
+            }
+
+            // Enriquecer filas si la tabla ya fue renderizada por busqueda.js
+            function aplicarControlesAdminEnTabla() {
+                if (!esAdmin) return;
+                const tbody = document.getElementById("tablaBusquedaBody");
+                if (!tbody) return;
+
+                const contratos = obtenerContratos();
+                const filas = tbody.querySelectorAll("tr");
+                filas.forEach((tr, idx) => {
+                    if (tr.querySelector("td[colspan]")) return;
+                    if (tr.querySelector(".celda-admin-acciones")) return;
+
+                    const td = document.createElement("td");
+                    td.className = "p-1.5 text-center whitespace-nowrap celda-admin-acciones";
+
+                    const btnEdit = document.createElement("button");
+                    btnEdit.type = "button";
+                    btnEdit.textContent = "Editar";
+                    btnEdit.className = "px-2 py-0.5 bg-indigo-600 text-white rounded text-[10px] mr-1 hover:bg-indigo-500 cursor-pointer";
+                    btnEdit.addEventListener("click", () => abrirModalEditar(idx, contratos[idx]));
+
+                    const btnDel = document.createElement("button");
+                    btnDel.type = "button";
+                    btnDel.textContent = "Borrar";
+                    btnDel.className = "px-2 py-0.5 bg-red-600 text-white rounded text-[10px] hover:bg-red-500 cursor-pointer";
+                    btnDel.addEventListener("click", () => {
+                        const listaActual = obtenerContratos();
+                        const item = listaActual[idx];
+                        if (!item) return;
+                        if (!confirm(`¿Borrar contrato "${item.nroContrato || idx + 1}"? Quedará en el historial de borrados.`)) return;
+                        const [eliminado] = listaActual.splice(idx, 1);
+                        guardarHistorial("fila", `Contrato ${eliminado.nroContrato || ""} (${eliminado.nombreCliente || ""})`, eliminado);
+                        guardarContratos(listaActual);
+                        location.reload();
+                    });
+
+                    td.appendChild(btnEdit);
+                    td.appendChild(btnDel);
+                    tr.appendChild(td);
+                });
+            }
+
+            setTimeout(aplicarControlesAdminEnTabla, 250);
+            const tbodyObserver = document.getElementById("tablaBusquedaBody");
+            if (tbodyObserver && esAdmin) {
+                new MutationObserver(() => aplicarControlesAdminEnTabla()).observe(tbodyObserver, { childList: true });
+            }
+
+            // Modal Editar
+            const modalEditar = document.getElementById("modalEditarContrato");
+            function abrirModalEditar(idx, item) {
+                if (!esAdmin || !item) return;
+                document.getElementById("editIndiceContrato").value = idx;
+                document.getElementById("editFechaProceso").value = item.fechaProceso || "";
+                document.getElementById("editFechaContrato").value = item.fechaContrato || "";
+                document.getElementById("editNroDistribuidor").value = item.nroDistribuidor || "";
+                document.getElementById("editNroContrato").value = item.nroContrato || "";
+                document.getElementById("editCliente").value = item.nombreCliente || "";
+                document.getElementById("editEmpresa").value = item.nombreEmpresa || "";
+                document.getElementById("editObservaciones").value = item.observaciones || "";
+                modalEditar.classList.remove("hidden");
+                modalEditar.classList.add("flex");
+            }
+
+            document.getElementById("btnCerrarEditar").addEventListener("click", () => {
+                modalEditar.classList.add("hidden");
+                modalEditar.classList.remove("flex");
+            });
+            document.getElementById("btnCancelarEditar").addEventListener("click", () => {
+                modalEditar.classList.add("hidden");
+                modalEditar.classList.remove("flex");
+            });
+
+            document.getElementById("formEditarContrato").addEventListener("submit", (e) => {
+                e.preventDefault();
+                if (!esAdmin) return;
+                const idx = parseInt(document.getElementById("editIndiceContrato").value, 10);
+                const lista = obtenerContratos();
+                if (!lista[idx]) return;
+
+                lista[idx] = {
+                    ...lista[idx],
+                    fechaProceso: document.getElementById("editFechaProceso").value.trim(),
+                    fechaContrato: document.getElementById("editFechaContrato").value.trim(),
+                    nroDistribuidor: document.getElementById("editNroDistribuidor").value.trim(),
+                    nroContrato: document.getElementById("editNroContrato").value.trim(),
+                    nombreCliente: document.getElementById("editCliente").value.trim(),
+                    nombreEmpresa: document.getElementById("editEmpresa").value.trim(),
+                    observaciones: document.getElementById("editObservaciones").value.trim()
+                };
+                guardarContratos(lista);
+                modalEditar.classList.add("hidden");
+                modalEditar.classList.remove("flex");
+                location.reload();
+            });
+
+            // Borrar Tabla completa
+            document.getElementById("btnBorrarTablaContratos").addEventListener("click", () => {
+                if (!esAdmin) return;
+                const lista = obtenerContratos();
+                if (lista.length === 0) {
+                    alert("No hay contratos en la tabla para borrar.");
+                    return;
+                }
+                if (!confirm(`¿Seguro que deseas BORRAR TODA la tabla de contratos (${lista.length} registros)? Podrás restaurarlos desde el Historial de Borrados.`)) return;
+                guardarHistorial("tabla", `Borrado completo de tabla Contratos (${lista.length} registros)`, lista);
+                guardarContratos([]);
+                location.reload();
+            });
+
+            // Historial de borrados y restauración
+            const modalHistorial = document.getElementById("modalHistorialBorrados");
+            function renderHistorial() {
+                const cont = document.getElementById("listaHistorialBorrados");
+                const hist = JSON.parse(localStorage.getItem("historial_borrados")) || [];
+                if (hist.length === 0) {
+                    cont.innerHTML = `<p class="text-center text-gray-500 py-6">No hay registros eliminados en el historial.</p>`;
+                    return;
+                }
+                cont.innerHTML = hist.map(item => `
+                    <div class="border rounded p-2.5 bg-slate-50 flex items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-slate-800">[${item.tipo.toUpperCase()}] ${item.detalle}</div>
+                            <div class="text-[10px] text-gray-500">Por: ${item.usuario} (${item.rol}) — ${item.fecha}</div>
+                        </div>
+                        <button type="button" data-restaurar="${item.id}"
+                            class="btn-restaurar px-2.5 py-1 bg-emerald-600 text-white rounded text-[10px] font-semibold hover:bg-emerald-500 cursor-pointer">
+                            Restaurar
+                        </button>
+                    </div>
+                `).join("");
+
+                cont.querySelectorAll(".btn-restaurar").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        const idNum = Number(btn.getAttribute("data-restaurar"));
+                        const actualHist = JSON.parse(localStorage.getItem("historial_borrados")) || [];
+                        const idx = actualHist.findIndex(h => h.id === idNum);
+                        if (idx === -1) return;
+                        const entry = actualHist[idx];
+
+                        if (entry.tipo === "contador" && entry.datos && typeof entry.datos.anterior !== "undefined") {
+                            localStorage.setItem("contadorGlobalSi", entry.datos.anterior);
+                        } else if (entry.tipo === "fila" && entry.datos) {
+                            const actuales = obtenerContratos();
+                            actuales.push(entry.datos);
+                            guardarContratos(actuales);
+                        } else if (entry.tipo === "tabla" && Array.isArray(entry.datos)) {
+                            const actuales = obtenerContratos();
+                            guardarContratos([...actuales, ...entry.datos]);
+                        }
+
+                        actualHist.splice(idx, 1);
+                        localStorage.setItem("historial_borrados", JSON.stringify(actualHist));
+                        renderHistorial();
+                        alert("✔ Registro restaurado con éxito.");
+                    });
+                });
+            }
+
+            document.getElementById("btnHistorialBorrados").addEventListener("click", () => {
+                if (!esAdmin) return;
+                renderHistorial();
+                modalHistorial.classList.remove("hidden");
+                modalHistorial.classList.add("flex");
+            });
+
+            document.getElementById("btnCerrarHistorial").addEventListener("click", () => {
+                modalHistorial.classList.add("hidden");
+                modalHistorial.classList.remove("flex");
+                location.reload();
+            });
+        });
+    </script>
 </body>
 
 </html>

@@ -408,4 +408,106 @@ function limpiarBorradorFormulario() {
         localStorage.removeItem("borrador_" + input.id);
         input.value = "";
     });
+    function obtenerSesionRol() {
+    try {
+        const s = JSON.parse(localStorage.getItem("sesion_usuario"));
+        return s && s.rol ? s.rol : null;
+    } catch {
+        return null;
+    }
+}
+
+function esAdminActual() {
+    return obtenerSesionRol() === "administrador";
+}
+
+function registrarHistorialBorrado(tipo, detalle, datos) {
+    const sesion = JSON.parse(localStorage.getItem("sesion_usuario")) || {};
+    const hist = JSON.parse(localStorage.getItem("historial_borrados")) || [];
+    hist.unshift({
+        id: Date.now(),
+        tipo, // "contador" | "fila" | "tabla"
+        detalle,
+        usuario: sesion.user || "desconocido",
+        rol: sesion.rol || "sin_rol",
+        fecha: new Date().toLocaleString(),
+        datos
+    });
+    localStorage.setItem("historial_borrados", JSON.stringify(hist));
+}
+
+// 1) Reiniciar contador global a 0 (solo administrador)
+function reiniciarContadorGlobalSi() {
+    if (!esAdminActual()) {
+        alert("⚠ Solo el administrador puede reiniciar el contador global a 0.");
+        return;
+    }
+    const anterior = parseInt(localStorage.getItem("contadorGlobalSi") || "0", 10);
+    registrarHistorialBorrado("contador", "Reinicio de contadorGlobalSi a 0", { anterior });
+    localStorage.setItem("contadorGlobalSi", 0);
+    const spanSi = document.getElementById("contadorSi");
+    if (spanSi) spanSi.innerText = 0;
+    alert("✔ Contador global reiniciado a 0.");
+}
+
+// 2) Borrar una fila de un arreglo en localStorage (ej. "contratos_indexados" o "control_tiempos")
+function borrarFilaStorage(claveStorage, indice, etiqueta = "registro") {
+    if (!esAdminActual()) {
+        alert("⚠ Solo el administrador puede borrar filas.");
+        return false;
+    }
+    const lista = JSON.parse(localStorage.getItem(claveStorage)) || [];
+    if (indice < 0 || indice >= lista.length) return false;
+    const [eliminada] = lista.splice(indice, 1);
+    registrarHistorialBorrado("fila", `Eliminada fila de ${etiqueta}`, eliminada);
+    localStorage.setItem(claveStorage, JSON.stringify(lista));
+    return true;
+}
+
+// 3) Borrar toda una tabla/lista en localStorage
+function borrarTablaStorage(claveStorage, etiqueta = "tabla") {
+    if (!esAdminActual()) {
+        alert("⚠ Solo el administrador puede borrar tablas completas.");
+        return false;
+    }
+    const lista = JSON.parse(localStorage.getItem(claveStorage)) || [];
+    if (lista.length === 0) {
+        alert("No hay registros para borrar.");
+        return false;
+    }
+    if (!confirm(`¿Seguro que deseas borrar TODOS los registros de ${etiqueta}? Quedarán en el historial de borrados.`)) {
+        return false;
+    }
+    registrarHistorialBorrado("tabla", `Borrado completo de ${etiqueta} (${lista.length} registros)`, lista);
+    localStorage.setItem(claveStorage, JSON.stringify([]));
+    return true;
+}
+
+// 4) Restaurar un borrado accidental desde el historial
+function restaurarBorradoAccidental(idRegistro) {
+    if (!esAdminActual()) {
+        alert("⚠ Solo el administrador puede restaurar registros.");
+        return false;
+    }
+    const hist = JSON.parse(localStorage.getItem("historial_borrados")) || [];
+    const idx = hist.findIndex(h => h.id === idRegistro);
+    if (idx === -1) return false;
+
+    const item = hist[idx];
+    if (item.tipo === "contador" && item.datos && typeof item.datos.anterior !== "undefined") {
+        localStorage.setItem("contadorGlobalSi", item.datos.anterior);
+        const spanSi = document.getElementById("contadorSi");
+        if (spanSi) spanSi.innerText = item.datos.anterior;
+    } else if (item.tipo === "fila" && item.datos) {
+        const actuales = JSON.parse(localStorage.getItem("contratos_indexados")) || [];
+        actuales.push(item.datos);
+        localStorage.setItem("contratos_indexados", JSON.stringify(actuales));
+    } else if (item.tipo === "tabla" && Array.isArray(item.datos)) {
+        localStorage.setItem("contratos_indexados", JSON.stringify(item.datos));
+    }
+
+    hist.splice(idx, 1);
+    localStorage.setItem("historial_borrados", JSON.stringify(hist));
+    return true;
+}
 }
