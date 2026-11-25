@@ -48,12 +48,18 @@ public class ServidorWeb {
         final String token;
         final String correo;
         final String rol;
+        final String contrasenaTemporal;
 
-        SolicitudPendiente(String token, String correo, String rol) {
+        SolicitudPendiente(String token, String correo, String rol, String contrasenaTemporal) {
             this.token = token;
             this.correo = correo;
             this.rol = rol;
+            this.contrasenaTemporal = contrasenaTemporal;
         }
+    }
+
+    private static String generarContrasenaSistema() {
+        return "Sys#" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
     }
 
     public static void main(String[] args) throws IOException {
@@ -308,7 +314,8 @@ public class ServidorWeb {
             }
 
             String json = "{\"status\": \"success\", \"correo\": \"" + escaparJson(solicitud.correo)
-                    + "\", \"rol\": \"" + escaparJson(solicitud.rol) + "\"}";
+                    + "\", \"rol\": \"" + escaparJson(solicitud.rol)
+                    + "\", \"contrasenaTemporal\": \"" + escaparJson(solicitud.contrasenaTemporal) + "\"}";
             enviarJson(exchange, 200, json);
         }
     }
@@ -333,7 +340,6 @@ public class ServidorWeb {
             String body = leerCuerpo(exchange);
             String token = extraerValorJson(body, "token").trim();
             String usuarioAsignado = extraerValorJson(body, "usuario").trim();
-            String contrasenaAsignada = extraerValorJson(body, "contrasena").trim();
 
             SolicitudPendiente solicitud = token.isEmpty() ? null : SOLICITUDES_PENDIENTES.get(token);
             if (solicitud == null) {
@@ -341,10 +347,12 @@ public class ServidorWeb {
                 return;
             }
 
-            if (usuarioAsignado.isEmpty() || contrasenaAsignada.length() < 4) {
-                enviarJson(exchange, 400, "{\"status\": \"error\", \"mensaje\": \"Debe ingresar un nombre de usuario y una contraseña válida (mínimo 4 caracteres).\"}");
+            if (usuarioAsignado.isEmpty()) {
+                enviarJson(exchange, 400, "{\"status\": \"error\", \"mensaje\": \"Debe ingresar un nombre de usuario.\"}");
                 return;
             }
+
+            String contrasenaAsignada = solicitud.contrasenaTemporal;
 
             String sqlExisteCorreo = "SELECT COUNT(*) FROM db_gestor_documental.usuarios WHERE LOWER(correo) = LOWER(?)";
             String sqlContarAdmins = "SELECT COUNT(*) FROM db_gestor_documental.usuarios WHERE rol = 'administrador'";
@@ -392,11 +400,14 @@ public class ServidorWeb {
 
                 SOLICITUDES_PENDIENTES.remove(token);
 
+                String enlaceLogin = URL_BASE_API + "/login.html";
                 String cuerpoUsuario = "Tu solicitud de acceso al Centro de Gestión Documental ha sido aprobada.\n\n"
                         + "Nombre de usuario asignado: " + usuarioAsignado + "\n"
                         + "Contraseña inicial del sistema: " + contrasenaAsignada + "\n"
                         + "Rol: " + solicitud.rol + "\n\n"
-                        + "Al ingresar por primera vez con esta contraseña, el sistema te solicitará cambiarla.\n"
+                        + "Ingresa a la aplicación aquí:\n"
+                        + enlaceLogin + "\n\n"
+                        + "Al ingresar a la aplicación con esta contraseña, podrás cambiarla desde el sistema.\n"
                         + "Tu nombre de usuario asignado no podrá modificarse.\n";
                 enviarCorreoAsync(solicitud.correo, "Credenciales de acceso - Centro de Gestión Documental", cuerpoUsuario);
 
@@ -615,13 +626,14 @@ public class ServidorWeb {
                     }
 
                     String token = UUID.randomUUID().toString();
-                    SOLICITUDES_PENDIENTES.put(token, new SolicitudPendiente(token, correo, rol));
+                    String contrasenaSistema = generarContrasenaSistema();
+                    SOLICITUDES_PENDIENTES.put(token, new SolicitudPendiente(token, correo, rol, contrasenaSistema));
 
                     String enlaceAplicacion = URL_BASE_API + "/login.html?aprobarToken=" + token;
                     String cuerpoAdmin = "Hola administrador, te llegó una nueva solicitud de acceso al Centro de Gestión Documental:\n\n"
                             + "Correo solicitante: " + correo + "\n"
                             + "Rol solicitado: " + rol + "\n\n"
-                            + "Abrir aplicación para asignar usuario, contraseña y aprobar:\n"
+                            + "Abrir aplicación para asignar usuario y aprobar:\n"
                             + enlaceAplicacion + "\n";
 
                     enviarCorreoAsync(CORREO_ADMIN_DESTINO, "Nueva solicitud de acceso - " + rol, cuerpoAdmin);
@@ -704,6 +716,41 @@ public class ServidorWeb {
                 }
 
                 enviarJson(exchange, 200, respuestaJson);
+            } else if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+                StringBuilder sb = new StringBuilder("[");
+                String sql = "SELECT no_folio, fecha_proceso, fecha_contrato, distribuidor_id, cliente_id, observaciones, nombre_empresa, codigo_empresa, area_empresa, archivo, drive_url FROM documentos ORDER BY id DESC";
+
+                try (Connection conn = Conexion.obtenerConexion()) {
+                    if (conn != null) {
+                        try (PreparedStatement pstmt = conn.prepareStatement(sql);
+                             ResultSet rs = pstmt.executeQuery()) {
+                            boolean primero = true;
+                            while (rs.next()) {
+                                if (!primero) sb.append(",");
+                                primero = false;
+                                sb.append("{")
+                                  .append("\"nroContrato\":\"").append(escaparJson(rs.getString("no_folio"))).append("\",")
+                                  .append("\"fechaProceso\":\"").append(escaparJson(rs.getString("fecha_proceso"))).append("\",")
+                                  .append("\"fechaContrato\":\"").append(escaparJson(rs.getString("fecha_contrato"))).append("\",")
+                                  .append("\"nroDistribuidor\":\"").append(escaparJson(rs.getString("distribuidor_id"))).append("\",")
+                                  .append("\"nombreCliente\":\"").append(escaparJson(rs.getString("cliente_id"))).append("\",")
+                                  .append("\"observaciones\":\"").append(escaparJson(rs.getString("observaciones"))).append("\",")
+                                  .append("\"nombreEmpresa\":\"").append(escaparJson(rs.getString("nombre_empresa"))).append("\",")
+                                  .append("\"codigoEmpresa\":\"").append(escaparJson(rs.getString("codigo_empresa"))).append("\",")
+                                  .append("\"areaEmpresa\":\"").append(escaparJson(rs.getString("area_empresa"))).append("\",")
+                                  .append("\"archivo\":\"").append(escaparJson(rs.getString("archivo"))).append("\",")
+                                  .append("\"driveUrl\":\"").append(escaparJson(rs.getString("drive_url"))).append("\"")
+                                  .append("}");
+                            }
+                        }
+                    }
+                } catch (SQLException e) {
+                    System.err.println("⚠ Error SQL al consultar documentos: " + e.getMessage());
+                    e.printStackTrace();
+                }
+
+                sb.append("]");
+                enviarJson(exchange, 200, sb.toString());
             } else {
                 String respuesta = "API del Gestor Documental - Funcionando correctamente";
                 exchange.sendResponseHeaders(200, respuesta.getBytes().length);
@@ -745,7 +792,7 @@ public class ServidorWeb {
                 String totalHoras = extraerValorJson(jsonRecibido, "totalHoras");
                 String fechaCreacion = extraerValorJson(jsonRecibido, "fechaCreacion");
 
-                String sql = "INSERT INTO control_tiempos (fecha_turno, cantidad_1, hora_inicio_1, hora_fin_1, cantidad_2, hora_inicio_2, hora_fin_2, horas_porcentaje, horas_porProceso, total_horas, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String sql = "INSERT INTO control_tiempos (fecha_turno, cantidad_1, hora_inicio_1, hora_fin_1, cantidad_2, hora_inicio_2, hora_fin_2, horas_porcentaje, horas_por_proceso, total_horas, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                 String respuestaJson = "{\"status\": \"success\", \"message\": \"Control de tiempos guardado en MySQL con éxito\"}";
 

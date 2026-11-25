@@ -87,7 +87,7 @@
         </div>
     </div>
 
-    <!-- Ventana / Modal Administrador: Aprobar Solicitud y Asignar Credenciales -->
+    <!-- Ventana / Modal Administrador: Aprobar Solicitud y Asignar Usuario -->
     <div id="modalAprobar" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 px-4">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm border border-gray-200">
             <div class="flex items-center justify-between mb-4 border-b pb-2">
@@ -103,15 +103,15 @@
 
             <form id="formAprobar" class="space-y-3 text-xs">
                 <div>
-                    <label class="block font-medium text-gray-700 mb-1">Nombre de usuario asignado:</label>
-                    <input type="text" id="aprUsuario" required placeholder="Ej. jperez"
+                    <label class="block font-medium text-gray-700 mb-1">Nombre de usuario (heredado del correo):</label>
+                    <input type="text" id="aprUsuario" placeholder="Automático desde el correo"
                         class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
 
                 <div>
-                    <label class="block font-medium text-gray-700 mb-1">Contraseña inicial del sistema:</label>
-                    <input type="text" id="aprContrasena" required placeholder="Ej. ClaveTemp123"
-                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <label class="block font-medium text-gray-700 mb-1">Contraseña del sistema (generada automáticamente):</label>
+                    <input type="text" id="aprContrasena" readonly
+                        class="w-full px-3 py-1.5 border border-gray-200 rounded bg-gray-100 text-slate-700 font-mono select-all cursor-default">
                 </div>
 
                 <div class="flex justify-end space-x-2 pt-3 border-t">
@@ -122,49 +122,6 @@
                     <button type="submit" id="btnConfirmarAprobar"
                         class="px-4 py-1.5 bg-emerald-600 text-white rounded font-semibold hover:bg-emerald-500 cursor-pointer">
                         Aprobar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Ventana / Modal Primer Ingreso: Cambio Obligatorio de Contraseña -->
-    <div id="modalCambioClave" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 px-4">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm border border-gray-200">
-            <div class="mb-4 border-b pb-2">
-                <h2 class="text-sm font-bold text-slate-800">Cambio de Contraseña Obligatorio</h2>
-                <p class="text-[11px] text-gray-500 mt-0.5">Por seguridad en tu primer ingreso, cambia la clave asignada por el sistema.</p>
-            </div>
-
-            <form id="formCambioClave" class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Nombre de usuario (no editable):</label>
-                    <input type="text" id="cambioUsuario" disabled readonly
-                        class="w-full px-3 py-1.5 border border-gray-200 rounded bg-gray-100 text-gray-600 cursor-not-allowed">
-                </div>
-
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Contraseña actual (del sistema):</label>
-                    <input type="password" id="cambioClaveActual" required placeholder="••••••••"
-                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Nueva contraseña:</label>
-                    <input type="password" id="cambioClaveNueva" required placeholder="Mínimo 4 caracteres"
-                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-
-                <div>
-                    <label class="block font-medium text-gray-700 mb-1">Confirmar nueva contraseña:</label>
-                    <input type="password" id="cambioClaveConfirmar" required placeholder="Repite la nueva contraseña"
-                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-
-                <div class="flex justify-end pt-3 border-t">
-                    <button type="submit" id="btnGuardarClave"
-                        class="w-full px-4 py-2 bg-indigo-600 text-white rounded font-semibold hover:bg-indigo-500 cursor-pointer">
-                        Guardar Nueva Contraseña
                     </button>
                 </div>
             </form>
@@ -194,22 +151,19 @@
             const aprContrasena = document.getElementById("aprContrasena");
             const btnConfirmarAprobar = document.getElementById("btnConfirmarAprobar");
 
-            const modalCambioClave = document.getElementById("modalCambioClave");
-            const formCambioClave = document.getElementById("formCambioClave");
-            const cambioUsuario = document.getElementById("cambioUsuario");
-            const cambioClaveActual = document.getElementById("cambioClaveActual");
-            const cambioClaveNueva = document.getElementById("cambioClaveNueva");
-            const cambioClaveConfirmar = document.getElementById("cambioClaveConfirmar");
-            const btnGuardarClave = document.getElementById("btnGuardarClave");
-
             const ROLES_VALIDOS = ["administrador", "usuario", "lector"];
             let tokenAprobacionActual = "";
-            let sesionPendienteCambio = null;
 
             function obtenerUrlBaseBackend() {
-                return (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port === "8080"
-                    ? ""
-                    : "http://localhost:8080";
+                if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+                    return window.location.origin;
+                }
+                return "http://192.168.169.27:8080";
+            }
+
+            function derivarUsuarioDesdeCorreo(correo) {
+                if (!correo || !correo.includes("@")) return (correo || "").trim();
+                return correo.split("@")[0].trim();
             }
 
             function mostrarErrorLogin(texto) {
@@ -271,24 +225,15 @@
                 modalAprobar.classList.remove("flex");
             }
 
-            function abrirModalCambioClave(usuarioData, claveInicial) {
-                sesionPendienteCambio = usuarioData;
-                formCambioClave.reset();
-                cambioUsuario.value = usuarioData.user;
-                cambioClaveActual.value = claveInicial;
-                modalCambioClave.classList.remove("hidden");
-                modalCambioClave.classList.add("flex");
-                cambioClaveNueva.focus();
-            }
-
-            function completarIngreso(usuarioData) {
+            function completarIngreso(usuarioData, debeCambiarClave) {
                 const rolReal = ROLES_VALIDOS.includes(usuarioData.rol) ? usuarioData.rol : "usuario";
                 localStorage.setItem("sesion_activa", "true");
                 localStorage.setItem("sesion_usuario", JSON.stringify({
                     user: usuarioData.user,
                     email: usuarioData.email,
                     rol: rolReal,
-                    usuarioBloqueado: true
+                    usuarioBloqueado: true,
+                    debeCambiarClave: Boolean(debeCambiarClave)
                 }));
                 window.location.href = "index.html";
             }
@@ -307,9 +252,11 @@
                         aprCorreo.textContent = data.correo;
                         aprRol.textContent = data.rol;
                         formAprobar.reset();
+                        aprUsuario.value = derivarUsuarioDesdeCorreo(data.correo);
+                        aprContrasena.value = data.contrasenaTemporal || "";
                         modalAprobar.classList.remove("hidden");
                         modalAprobar.classList.add("flex");
-                        aprUsuario.focus();
+                        btnConfirmarAprobar.focus();
                     }
                 } catch (err) {
                     console.error("Error al cargar solicitud:", err);
@@ -326,16 +273,15 @@
 
             formAprobar.addEventListener("submit", async (e) => {
                 e.preventDefault();
-                const usuarioAsignado = aprUsuario.value.trim();
-                const contrasenaAsignada = aprContrasena.value.trim();
+                const usuarioAsignado = aprUsuario.value.trim() || derivarUsuarioDesdeCorreo(aprCorreo.textContent);
 
                 if (!tokenAprobacionActual) {
                     alert("⚠ Token de aprobación no encontrado.");
                     return;
                 }
 
-                if (!usuarioAsignado || contrasenaAsignada.length < 4) {
-                    alert("⚠ Ingrese un nombre de usuario y una contraseña de al menos 4 caracteres.");
+                if (!usuarioAsignado) {
+                    alert("⚠ No se pudo obtener un nombre de usuario desde el correo.");
                     return;
                 }
 
@@ -348,8 +294,7 @@
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             token: tokenAprobacionActual,
-                            usuario: usuarioAsignado,
-                            contrasena: contrasenaAsignada
+                            usuario: usuarioAsignado
                         })
                     });
 
@@ -407,64 +352,10 @@
                         rol: rolReal
                     };
 
-                    if (data.debeCambiarClave === true) {
-                        abrirModalCambioClave(usuarioData, passIngresado);
-                        return;
-                    }
-
-                    completarIngreso(usuarioData);
+                    completarIngreso(usuarioData, data.debeCambiarClave === true);
                 } catch (err) {
                     console.error("Error al iniciar sesión:", err);
                     mostrarErrorLogin("⚠ Credenciales incorrectas.");
-                }
-            });
-
-            formCambioClave.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                if (!sesionPendienteCambio) return;
-
-                const claveActual = cambioClaveActual.value.trim();
-                const nuevaClave = cambioClaveNueva.value.trim();
-                const confirmarClave = cambioClaveConfirmar.value.trim();
-
-                if (nuevaClave.length < 4) {
-                    alert("⚠ La nueva contraseña debe tener al menos 4 caracteres.");
-                    return;
-                }
-
-                if (nuevaClave !== confirmarClave) {
-                    alert("⚠ La nueva contraseña y su confirmación no coinciden.");
-                    return;
-                }
-
-                btnGuardarClave.disabled = true;
-                btnGuardarClave.textContent = "Guardando...";
-
-                try {
-                    const resp = await fetch(`${obtenerUrlBaseBackend()}/api/usuarios/cambiar-clave`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            usuario: sesionPendienteCambio.user,
-                            claveActual: claveActual,
-                            nuevaClave: nuevaClave
-                        })
-                    });
-
-                    const data = await resp.json().catch(() => ({}));
-                    if (!resp.ok || data.status !== "success") {
-                        alert(`⚠ ${data.mensaje || "No se pudo cambiar la contraseña."}`);
-                        return;
-                    }
-
-                    alert("✔ Contraseña actualizada. Ahora ingresarás al sistema.");
-                    completarIngreso(sesionPendienteCambio);
-                } catch (err) {
-                    console.error("Error al cambiar contraseña:", err);
-                    alert("⚠ Error de conexión al actualizar la contraseña.");
-                } finally {
-                    btnGuardarClave.disabled = false;
-                    btnGuardarClave.textContent = "Guardar Nueva Contraseña";
                 }
             });
 

@@ -7,6 +7,8 @@
     <title>Centro de Gestión Documental - Indexación</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
 
     <link rel="stylesheet" href="css/estilos.css">
     <link rel="stylesheet" href="css/buttons.css">
@@ -19,6 +21,10 @@
             <span class="font-bold text-white border-b-2 border-indigo-400 pb-0.5 cursor-pointer">Contratos</span>
         </div>
         <div class="flex items-center space-x-3">
+            <button id="btnAbrirCambiarClave" type="button"
+                class="bg-slate-700 hover:bg-slate-600 text-gray-200 px-2 py-0.5 rounded text-[10px] font-medium cursor-pointer">
+                Cambiar clave
+            </button>
             <span id="headerUsuarioTexto" class="text-gray-300 text-[11px]">Usuario</span>
             <span id="headerRolBadge"
                 class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-700 text-gray-200">rol</span>
@@ -36,7 +42,7 @@
             <span id="btnImportar"
                 class="boton-estandar cursor-pointer inline-block text-center whitespace-nowrap shrink-0 px-1.5 py-0.5 text-[10px]">Importar
                 PDF</span>
-            <input type="file" id="inputArchivoPdf" accept=".pdf" class="hidden" style="display: none;">
+            <input type="file" id="inputArchivoPdf" accept=".pdf" multiple class="hidden" style="display: none;">
             <button id="btnAdminReiniciarContador" type="button"
                 class="hidden bg-indigo-600 text-white px-1.5 py-0.5 rounded text-[10px] font-medium hover:bg-indigo-500 cursor-pointer whitespace-nowrap shrink-0">Reset
                 0</button>
@@ -46,7 +52,6 @@
             <button id="btnAdminHistorialIndex" type="button"
                 class="hidden bg-amber-600 text-white px-1.5 py-0.5 rounded text-[10px] font-medium hover:bg-amber-500 cursor-pointer whitespace-nowrap shrink-0">Historial</button>
         </div>
-    </div>
     </div>
 
     <div class="flex-1 flex overflow-hidden">
@@ -151,7 +156,7 @@
         </aside>
 
         <main class="flex-1 bg-slate-200 flex flex-col">
-            <div class="bg-slate-900 text-white h-10 px-4 flex items-center justify-between text-xs">
+            <div class="relative bg-slate-900 text-white h-10 px-4 flex items-center justify-between text-xs">
                 <div class="flex items-center space-x-2">
                     <span class="bg-blue-600 px-2 py-0.5 rounded font-bold text-[11px]">Digitalteam VIEWER</span>
                     <span id="nombreDocumentoVisor">Seleccione un documento</span>
@@ -165,6 +170,10 @@
                     <span>🔍 140</span>
                     <span id="btnAjustar"
                         class="bg-slate-800 px-2 py-0.5 rounded text-white cursor-pointer">Ajustar</span>
+                </div>
+                <div id="contenedorBarraCargaVisor"
+                    class="hidden absolute bottom-0 left-0 right-0 h-[3px] bg-slate-800 overflow-hidden">
+                    <div id="barraCargaVisor" class="h-full w-0 bg-emerald-400 transition-all duration-150"></div>
                 </div>
             </div>
 
@@ -181,6 +190,55 @@
 
     </div>
 
+    <!-- Modal Cambiar Contraseña (Dentro de la aplicación) -->
+    <div id="modalCambioClaveApp" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 px-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm border border-gray-200 text-xs">
+            <div class="flex items-center justify-between mb-3 border-b pb-2">
+                <div>
+                    <h2 id="tituloModalClaveApp" class="text-sm font-bold text-slate-800">Cambiar Contraseña</h2>
+                    <p id="subtituloModalClaveApp" class="text-[11px] text-gray-500 mt-0.5">Actualiza tu contraseña
+                        dentro del sistema.</p>
+                </div>
+                <button id="btnCerrarModalClaveApp" type="button"
+                    class="text-gray-400 hover:text-gray-700 text-sm cursor-pointer">✕</button>
+            </div>
+
+            <form id="formCambioClaveApp" class="space-y-3">
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Nombre de usuario (no editable):</label>
+                    <input type="text" id="appCambioUsuario" disabled readonly
+                        class="w-full px-3 py-1.5 border border-gray-200 rounded bg-gray-100 text-gray-600 cursor-not-allowed">
+                </div>
+
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Contraseña actual:</label>
+                    <input type="password" id="appCambioClaveActual" required placeholder="••••••••"
+                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Nueva contraseña:</label>
+                    <input type="password" id="appCambioClaveNueva" required placeholder="Mínimo 4 caracteres"
+                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Confirmar nueva contraseña:</label>
+                    <input type="password" id="appCambioClaveConfirmar" required
+                        placeholder="Repite la nueva contraseña"
+                        class="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="flex justify-end pt-2 border-t">
+                    <button type="submit" id="btnGuardarClaveApp"
+                        class="w-full px-4 py-2 bg-indigo-600 text-white rounded font-semibold hover:bg-indigo-500 cursor-pointer">
+                        Guardar Nueva Contraseña
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal Historial de Borrados -->
     <div id="modalHistorialIndex" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 px-4">
         <div
@@ -193,12 +251,21 @@
             <div id="listaHistorialIndex" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
         </div>
     </div>
-
     <script src="js/botones.js"></script>
     <script src="js/script.js"></script>
     <script src="js/nav.js"></script>
+    <script src="js/drive-import.js"></script>
     <script src="js/indexamiento.js"></script>
     <script src="./js/ai-extractor.js"></script>
+
+    <script>
+        document.getElementById("btnImportar")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (typeof iniciarImportacionDrive === "function") {
+                iniciarImportacionDrive();
+            }
+        });
+    </script>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -216,6 +283,128 @@
             document.getElementById("headerRolBadge").textContent = rol;
             document.getElementById("headerInicialAvatar").textContent = nombreMostrar.charAt(0).toUpperCase() || "U";
 
+            function obtenerClaveUsuarioActual() {
+                try {
+                    const u = sesion && (sesion.user || sesion.usuario)
+                        ? String(sesion.user || sesion.usuario).trim().toLowerCase()
+                        : "invitado";
+                    return u.replace(/[^a-z0-9_-]/g, "_");
+                } catch {
+                    return "invitado";
+                }
+            }
+
+            // Modal Cambiar Contraseña dentro de la aplicación
+            const modalClaveApp = document.getElementById("modalCambioClaveApp");
+            const formClaveApp = document.getElementById("formCambioClaveApp");
+            const appCambioUsuario = document.getElementById("appCambioUsuario");
+            const appCambioClaveActual = document.getElementById("appCambioClaveActual");
+            const appCambioClaveNueva = document.getElementById("appCambioClaveNueva");
+            const appCambioClaveConfirmar = document.getElementById("appCambioClaveConfirmar");
+            const btnGuardarClaveApp = document.getElementById("btnGuardarClaveApp");
+            const btnAbrirCambiarClave = document.getElementById("btnAbrirCambiarClave");
+            const btnCerrarModalClaveApp = document.getElementById("btnCerrarModalClaveApp");
+            const tituloModalClaveApp = document.getElementById("tituloModalClaveApp");
+            const subtituloModalClaveApp = document.getElementById("subtituloModalClaveApp");
+
+            let obligarCambio = Boolean(sesion && sesion.debeCambiarClave);
+
+            function obtenerUrlBaseBackend() {
+                if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+                    return window.location.origin;
+                }
+                return "http://192.168.168.64:8080";
+            }
+
+            function abrirModalClaveApp(esObligatorio) {
+                if (!sesion || !sesion.user) {
+                    alert("⚠ No hay una sesión activa para cambiar contraseña.");
+                    return;
+                }
+                obligarCambio = Boolean(esObligatorio);
+                formClaveApp.reset();
+                appCambioUsuario.value = sesion.user;
+                if (obligarCambio) {
+                    tituloModalClaveApp.textContent = "Cambio de Contraseña Obligatorio";
+                    subtituloModalClaveApp.textContent = "Por seguridad en tu primer ingreso, cambia la clave asignada por el sistema.";
+                    btnCerrarModalClaveApp.classList.add("hidden");
+                } else {
+                    tituloModalClaveApp.textContent = "Cambiar Contraseña";
+                    subtituloModalClaveApp.textContent = "Actualiza tu contraseña dentro del sistema.";
+                    btnCerrarModalClaveApp.classList.remove("hidden");
+                }
+                modalClaveApp.classList.remove("hidden");
+                modalClaveApp.classList.add("flex");
+                appCambioClaveActual.focus();
+            }
+
+            function cerrarModalClaveApp() {
+                if (obligarCambio) return;
+                modalClaveApp.classList.add("hidden");
+                modalClaveApp.classList.remove("flex");
+            }
+
+            btnAbrirCambiarClave?.addEventListener("click", () => abrirModalClaveApp(obligarCambio));
+            btnCerrarModalClaveApp?.addEventListener("click", cerrarModalClaveApp);
+
+            formClaveApp?.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                if (!sesion || !sesion.user) return;
+
+                const claveActual = appCambioClaveActual.value.trim();
+                const nuevaClave = appCambioClaveNueva.value.trim();
+                const confirmarClave = appCambioClaveConfirmar.value.trim();
+
+                if (nuevaClave.length < 4) {
+                    alert("⚠ La nueva contraseña debe tener al menos 4 caracteres.");
+                    return;
+                }
+
+                if (nuevaClave !== confirmarClave) {
+                    alert("⚠ La nueva contraseña y su confirmación no coinciden.");
+                    return;
+                }
+
+                btnGuardarClaveApp.disabled = true;
+                btnGuardarClaveApp.textContent = "Guardando...";
+
+                try {
+                    const resp = await fetch(`${obtenerUrlBaseBackend()}/api/usuarios/cambiar-clave`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            usuario: sesion.user,
+                            claveActual: claveActual,
+                            nuevaClave: nuevaClave
+                        })
+                    });
+
+                    const data = await resp.json().catch(() => ({}));
+                    if (!resp.ok || data.status !== "success") {
+                        alert(`⚠ ${data.mensaje || "No se pudo cambiar la contraseña."}`);
+                        return;
+                    }
+
+                    obligarCambio = false;
+                    sesion.debeCambiarClave = false;
+                    localStorage.setItem("sesion_usuario", JSON.stringify(sesion));
+                    modalClaveApp.classList.add("hidden");
+                    modalClaveApp.classList.remove("flex");
+                    btnCerrarModalClaveApp.classList.remove("hidden");
+                    alert("✔ Contraseña actualizada correctamente.");
+                } catch (err) {
+                    console.error("Error al cambiar contraseña:", err);
+                    alert("⚠ Error de conexión al actualizar la contraseña.");
+                } finally {
+                    btnGuardarClaveApp.disabled = false;
+                    btnGuardarClaveApp.textContent = "Guardar Nueva Contraseña";
+                }
+            });
+
+            if (obligarCambio) {
+                abrirModalClaveApp(true);
+            }
+
             const aviso = document.getElementById("avisoRolIndex");
             if (esAdmin) {
                 aviso.textContent = "";
@@ -224,7 +413,6 @@
                 document.getElementById("btnAdminLimpiarCola").classList.remove("hidden");
                 document.getElementById("btnAdminHistorialIndex").classList.remove("hidden");
 
-                // Sin restricciones de fecha de proceso para administrador
                 const fp = document.getElementById("fechaProceso");
                 if (fp) {
                     fp.readOnly = false;
@@ -263,7 +451,6 @@
                 localStorage.setItem("historial_borrados", JSON.stringify(hist));
             }
 
-            // Reiniciar contador global a 0
             document.getElementById("btnAdminReiniciarContador")?.addEventListener("click", () => {
                 if (!esAdmin) return;
                 const actual = parseInt(localStorage.getItem("contadorGlobalSi") || "0", 10);
@@ -275,21 +462,44 @@
                 alert("✔ Contador global reiniciado a 0.");
             });
 
-            // Borrar cola de documentos pendientes
             document.getElementById("btnAdminLimpiarCola")?.addEventListener("click", () => {
                 if (!esAdmin) return;
-                const cola = JSON.parse(localStorage.getItem("lista_de_archivos_sesion")) || [];
-                if (cola.length === 0) {
+
+                const claveUsuario = `lista_de_archivos_sesion_${obtenerClaveUsuarioActual()}`;
+                const colaMemoria = Array.isArray(window.listaDeArchivos) ? window.listaDeArchivos : [];
+                const colaStorage = JSON.parse(
+                    localStorage.getItem(claveUsuario) || localStorage.getItem("lista_de_archivos_sesion") || "[]"
+                );
+                const colaActual = colaMemoria.length > 0 ? colaMemoria : colaStorage;
+
+                if (colaActual.length === 0) {
                     alert("No hay documentos pendientes en la cola.");
                     return;
                 }
-                if (!confirm(`¿Borrar todos los documentos pendientes (${cola.length}) de la cola? Quedarán en el historial.`)) return;
-                guardarHistorial("tabla", `Cola de documentos pendientes (${cola.length} archivos)`, cola);
-                localStorage.setItem("lista_de_archivos_sesion", JSON.stringify([]));
-                location.reload();
+                if (!confirm(`¿Borrar todos los documentos pendientes (${colaActual.length}) de la cola? Quedarán en el historial.`)) return;
+
+                const respaldo = colaActual.map(d => ({ nombre: d.nombre, url: d.url && d.url.startsWith("data:") ? d.url : null }));
+                guardarHistorial("tabla", `Cola de documentos pendientes (${colaActual.length} archivos)`, respaldo);
+
+                if (Array.isArray(window.listaDeArchivos)) {
+                    window.listaDeArchivos.forEach(doc => {
+                        if (doc && doc.url && doc.url.startsWith("blob:")) {
+                            URL.revokeObjectURL(doc.url);
+                        }
+                    });
+                    window.listaDeArchivos.length = 0;
+                }
+
+                localStorage.setItem(claveUsuario, JSON.stringify([]));
+                localStorage.removeItem("lista_de_archivos_sesion");
+
+                if (typeof window.actualizarListaDocumentos === "function") {
+                    window.actualizarListaDocumentos();
+                } else {
+                    location.reload();
+                }
             });
 
-            // Historial y restauración
             const modalHist = document.getElementById("modalHistorialIndex");
             function renderHistorialIndex() {
                 const cont = document.getElementById("listaHistorialIndex");
@@ -318,13 +528,20 @@
                         const idx = histActual.findIndex(h => h.id === idNum);
                         if (idx === -1) return;
                         const entry = histActual[idx];
+                        const claveUsuario = `lista_de_archivos_sesion_${obtenerClaveUsuarioActual()}`;
 
                         if (entry.tipo === "contador" && entry.datos && typeof entry.datos.anterior !== "undefined") {
                             localStorage.setItem("contadorGlobalSi", entry.datos.anterior);
                             const spanSi = document.getElementById("contadorSi");
                             if (spanSi) spanSi.innerText = entry.datos.anterior;
                         } else if (entry.origen === "indexamiento" && entry.tipo === "tabla" && Array.isArray(entry.datos)) {
-                            localStorage.setItem("lista_de_archivos_sesion", JSON.stringify(entry.datos));
+                            localStorage.setItem(claveUsuario, JSON.stringify(entry.datos));
+                            if (Array.isArray(window.listaDeArchivos)) {
+                                window.listaDeArchivos.splice(0, window.listaDeArchivos.length, ...entry.datos);
+                                if (typeof window.actualizarListaDocumentos === "function") {
+                                    window.actualizarListaDocumentos();
+                                }
+                            }
                         } else if (entry.tipo === "fila" && entry.datos) {
                             const actuales = JSON.parse(localStorage.getItem("contratos_indexados")) || [];
                             actuales.push(entry.datos);

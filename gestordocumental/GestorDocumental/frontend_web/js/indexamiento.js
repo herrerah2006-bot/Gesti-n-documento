@@ -3,6 +3,49 @@ const totalPaginas = 6;
 let listaDeArchivos = [];
 let ultimoNombreArchivo = "";
 
+function obtenerUrlBaseBackend() {
+    if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+        return window.location.origin;
+    }
+    return "http://192.168.168.64:8080";
+}
+
+function obtenerClaveUsuarioActual() {
+    try {
+        const s = JSON.parse(localStorage.getItem("sesion_usuario"));
+        const user = (s && (s.user || s.usuario)) ? String(s.user || s.usuario).trim().toLowerCase() : "invitado";
+        return user.replace(/[^a-z0-9_-]/g, "_");
+    } catch {
+        return "invitado";
+    }
+}
+
+function claveSesionArchivos() {
+    return `lista_de_archivos_sesion_${obtenerClaveUsuarioActual()}`;
+}
+
+function claveBorradorInput(inputId) {
+    return `borrador_${obtenerClaveUsuarioActual()}_${inputId}`;
+}
+
+function guardarListaArchivosSegura() {
+    try {
+        // Guardamos en localStorage solo entradas ligeras para no exceder cuota con PDFs de 25+ hojas
+        const versionLigera = listaDeArchivos.map(doc => {
+            if (doc.url && doc.url.startsWith("data:") && doc.url.length > 1500000) {
+                return { nombre: doc.nombre, url: null, esPesado: true };
+            }
+            if (doc.url && doc.url.startsWith("blob:")) {
+                return { nombre: doc.nombre, url: null, esPesado: true };
+            }
+            return doc;
+        });
+        localStorage.setItem(claveSesionArchivos(), JSON.stringify(versionLigera));
+    } catch (e) {
+        console.warn("No se pudo persistir toda la cola en localStorage por tamaño:", e);
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 
     let contadorSiActual = localStorage.getItem('contadorGlobalSi');
@@ -17,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    const archivosGuardados = localStorage.getItem("lista_de_archivos_sesion");
+    const archivosGuardados = localStorage.getItem(claveSesionArchivos());
     if (archivosGuardados) {
         try {
             listaDeArchivos = JSON.parse(archivosGuardados);
@@ -30,16 +73,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputsForm = document.querySelectorAll("#formIndexacion input, #formIndexacion textarea, input[id*='fecha'], input[id*='nro'], input[id*='nombre'], input[id*='observaciones'], input[id*='codigo'], input[id*='area']");
     inputsForm.forEach(input => {
         if (!input.id) return;
-        const valorGuardado = localStorage.getItem("borrador_" + input.id);
+        const claveBorrador = claveBorradorInput(input.id);
+        const valorGuardado = localStorage.getItem(claveBorrador);
         if (valorGuardado) {
             input.value = valorGuardado;
         }
         input.addEventListener("input", () => {
-            localStorage.setItem("borrador_" + input.id, input.value);
+            try {
+                localStorage.setItem(claveBorrador, input.value);
+            } catch (e) {
+                console.warn("No se pudo guardar borrador:", e);
+            }
         });
     });
 
     actualizarListaDocumentos();
+    window.listaDeArchivos = listaDeArchivos;
+    window.actualizarListaDocumentos = actualizarListaDocumentos;
 
 
     const btnIndexadoSup = document.getElementById("btnIndexadoSuperior");
@@ -78,12 +128,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (listaDeArchivos.length > 0) {
                     try {
                         const docActual = listaDeArchivos[0];
-                        const linkDescarga = document.createElement('a');
-                        linkDescarga.href = docActual.url;
-                        linkDescarga.download = nombreArchivoGenerado;
-                        document.body.appendChild(linkDescarga);
-                        linkDescarga.click();
-                        document.body.removeChild(linkDescarga);
+                        if (docActual.url) {
+                            const linkDescarga = document.createElement('a');
+                            linkDescarga.href = docActual.url;
+                            linkDescarga.download = nombreArchivoGenerado;
+                            document.body.appendChild(linkDescarga);
+                            linkDescarga.click();
+                            document.body.removeChild(linkDescarga);
+                        }
                     } catch (err) {
                         console.error("Error al descargar el PDF:", err);
                     }
@@ -146,8 +198,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 guardarControlTiemposEnServidor(fechaActualStr, corteActual);
 
 
-                listaDeArchivos.shift();
-                localStorage.setItem("lista_de_archivos_sesion", JSON.stringify(listaDeArchivos));
+                const eliminado = listaDeArchivos.shift();
+                if (eliminado && eliminado.url && eliminado.url.startsWith("blob:")) {
+                    URL.revokeObjectURL(eliminado.url);
+                }
+                guardarListaArchivosSegura();
                 actualizarListaDocumentos();
                 limpiarBorradorFormulario();
 
@@ -161,28 +216,45 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    const btnImportar = document.getElementById("btnImportar");
     const inputArchivoPdf = document.getElementById("inputArchivoPdf");
 
-    if (btnImportar && inputArchivoPdf) {
-        btnImportar.addEventListener("click", () => {
-            inputArchivoPdf.click();
-        });
-
+    if (inputArchivoPdf) {
         inputArchivoPdf.addEventListener("change", (e) => {
-            const archivo = e.target.files[0];
-            if (archivo) {
-                const lector = new FileReader();
-                lector.onload = function (evento) {
-                    const base64Data = evento.target.result;
-                    const nuevoDoc = { nombre: archivo.name, url: base64Data };
-                    listaDeArchivos.push(nuevoDoc);
-                    localStorage.setItem("lista_de_archivos_sesion", JSON.stringify(listaDeArchivos));
+            const archivos = Array.from(e.target.files || []);
+            if (archivos.length === 0) return;
 
+            let ultimoDocAgregado = null;
+
+            archivos.forEach((archivo) => {
+                // Para archivos mayores a 2 MB usamos Blob URL en vez de Base64 para evitar bloqueos y fallos en PDFs de 25+ hojas
+                if (archivo.size > 2 * 1024 * 1024) {
+                    const blobUrl = URL.createObjectURL(archivo);
+                    const nuevoDoc = { nombre: archivo.name, url: blobUrl };
+                    listaDeArchivos.push(nuevoDoc);
+                    ultimoDocAgregado = nuevoDoc;
+                    guardarListaArchivosSegura();
                     actualizarListaDocumentos();
-                    mostrarEnVisor(nuevoDoc);
-                };
-                lector.readAsDataURL(archivo);
+                } else {
+                    const lector = new FileReader();
+                    lector.onload = function (evento) {
+                        const base64Data = evento.target.result;
+                        const nuevoDoc = { nombre: archivo.name, url: base64Data };
+                        listaDeArchivos.push(nuevoDoc);
+                        ultimoDocAgregado = nuevoDoc;
+                        guardarListaArchivosSegura();
+                        actualizarListaDocumentos();
+                        mostrarEnVisor(nuevoDoc);
+                    };
+                    lector.readAsDataURL(archivo);
+                }
+            });
+
+            if (ultimoDocAgregado && ultimoDocAgregado.url && ultimoDocAgregado.url.startsWith("blob:")) {
+                mostrarEnVisor(ultimoDocAgregado);
+            }
+
+            if (typeof window.actualizarBarraCargaVisor === "function") {
+                setTimeout(() => window.actualizarBarraCargaVisor(0, false), 300);
             }
         });
     }
@@ -214,7 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    if (listaDeArchivos.length > 0) {
+    if (listaDeArchivos.length > 0 && listaDeArchivos[0].url) {
         mostrarEnVisor(listaDeArchivos[0]);
     }
 });
@@ -305,10 +377,14 @@ function mostrarEnVisor(doc) {
             lienzoVisor.innerHTML = `
                 <div class="bg-white p-8 border rounded shadow-md text-center max-w-md">
                     <p class="font-bold text-slate-800 mb-2">${doc.nombre}</p>
-                    <p class="text-xs text-gray-500">Documento cargado en el visor.</p>
+                    <p class="text-xs text-gray-500">Vuelve a importar este archivo si recargaste la página.</p>
                 </div>
             `;
         }
+    }
+
+    if (typeof window.actualizarBarraCargaVisor === "function") {
+        setTimeout(() => window.actualizarBarraCargaVisor(0, false), 250);
     }
 }
 
@@ -343,8 +419,9 @@ function guardarMetadataEnServidor(nombreArchivoParam = "") {
         archivo: archivoFinal
     };
 
+    const baseUrl = obtenerUrlBaseBackend();
 
-    fetch('http://localhost:8080/api/clientes', {
+    fetch(`${baseUrl}/api/clientes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -355,7 +432,7 @@ function guardarMetadataEnServidor(nombreArchivoParam = "") {
         })
         .catch(err => {
             console.error("Error de conexión:", err);
-            alert("Error: No se pudo conectar con el servidor Java en el puerto 8080.");
+            alert(`Error: No se pudo conectar con el servidor en ${baseUrl}.`);
         });
 }
 
@@ -386,7 +463,9 @@ function guardarControlTiemposEnServidor(fechaStr, corte) {
         fechaCreacion: fechaCreacionSql
     };
 
-    fetch("http://localhost:8080/api/control-tiempos", {
+    const baseUrl = obtenerUrlBaseBackend();
+
+    fetch(`${baseUrl}/api/control-tiempos`, {
         method: "POST",
         headers: { "Content-Type": "application/json; charset=UTF-8" },
         body: JSON.stringify(payloadControlTiempos)
@@ -405,10 +484,12 @@ function limpiarBorradorFormulario() {
     const inputsForm = document.querySelectorAll("#formIndexacion input, #formIndexacion textarea, input[id*='fecha'], input[id*='nro'], input[id*='nombre'], input[id*='observaciones'], input[id*='codigo'], input[id*='area']");
     inputsForm.forEach(input => {
         if (!input.id) return;
-        localStorage.removeItem("borrador_" + input.id);
+        localStorage.removeItem(claveBorradorInput(input.id));
         input.value = "";
     });
-    function obtenerSesionRol() {
+}
+
+function obtenerSesionRol() {
     try {
         const s = JSON.parse(localStorage.getItem("sesion_usuario"));
         return s && s.rol ? s.rol : null;
@@ -509,5 +590,4 @@ function restaurarBorradoAccidental(idRegistro) {
     hist.splice(idx, 1);
     localStorage.setItem("historial_borrados", JSON.stringify(hist));
     return true;
-}
 }

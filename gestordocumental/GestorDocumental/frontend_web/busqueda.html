@@ -42,6 +42,10 @@
             <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-gray-300 mb-4">
                 <h2 class="text-base font-bold text-slate-800">Búsqueda de Contratos</h2>
                 <div class="flex flex-wrap gap-2">
+                    <button id="btnActualizarInformacion" type="button"
+                        class="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-500 cursor-pointer">
+                        Actualizar información
+                    </button>
                     <button id="btnLimpiarBusqueda" type="button"
                         class="bg-slate-600 text-white px-3 py-1 rounded text-xs hover:bg-slate-500 cursor-pointer">Limpiar
                         Filtros</button>
@@ -191,6 +195,14 @@
                 avisoRol.textContent = "Modo Lector: solo consulta de registros.";
             }
 
+            function refrescarVista() {
+                if (typeof window.refrescarBusquedaContratos === "function") {
+                    window.refrescarBusquedaContratos();
+                } else {
+                    location.reload();
+                }
+            }
+
             function guardarHistorial(tipo, detalle, datos) {
                 const hist = JSON.parse(localStorage.getItem("historial_borrados")) || [];
                 hist.unshift({
@@ -247,7 +259,7 @@
                         const [eliminado] = listaActual.splice(idx, 1);
                         guardarHistorial("fila", `Contrato ${eliminado.nroContrato || ""} (${eliminado.nombreCliente || ""})`, eliminado);
                         guardarContratos(listaActual);
-                        location.reload();
+                        refrescarVista();
                     });
 
                     td.appendChild(btnEdit);
@@ -307,7 +319,7 @@
                 guardarContratos(lista);
                 modalEditar.classList.add("hidden");
                 modalEditar.classList.remove("flex");
-                location.reload();
+                refrescarVista();
             });
 
             // Borrar Tabla completa
@@ -321,7 +333,7 @@
                 if (!confirm(`¿Seguro que deseas BORRAR TODA la tabla de contratos (${lista.length} registros)? Podrás restaurarlos desde el Historial de Borrados.`)) return;
                 guardarHistorial("tabla", `Borrado completo de tabla Contratos (${lista.length} registros)`, lista);
                 guardarContratos([]);
-                location.reload();
+                refrescarVista();
             });
 
             // Historial de borrados y restauración
@@ -368,6 +380,7 @@
                         actualHist.splice(idx, 1);
                         localStorage.setItem("historial_borrados", JSON.stringify(actualHist));
                         renderHistorial();
+                        refrescarVista();
                         alert("✔ Registro restaurado con éxito.");
                     });
                 });
@@ -383,7 +396,7 @@
             document.getElementById("btnCerrarHistorial").addEventListener("click", () => {
                 modalHistorial.classList.add("hidden");
                 modalHistorial.classList.remove("flex");
-                location.reload();
+                refrescarVista();
             });
         });
     </script>
