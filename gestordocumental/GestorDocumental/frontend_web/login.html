@@ -152,13 +152,19 @@
             const btnConfirmarAprobar = document.getElementById("btnConfirmarAprobar");
 
             const ROLES_VALIDOS = ["administrador", "usuario", "lector"];
+            const DESTINO_POST_LOGIN = "inicio.html";
+            // Vacío ("") usa el mismo origen donde se abre la página (por ejemplo Vercel); si tu API está en otro dominio HTTPS, pon su URL aquí
+            const URL_BACKEND_EXTERNO = "";
             let tokenAprobacionActual = "";
 
             function obtenerUrlBaseBackend() {
-                if (window.location.protocol === "http:" || window.location.protocol === "https:") {
-                    return window.location.origin;
+                if (URL_BACKEND_EXTERNO.trim()) {
+                    return URL_BACKEND_EXTERNO.trim().replace(/\/+$/, "");
                 }
-                return "http://192.168.169.27:8080";
+                if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+                    return "http://localhost:3000";
+                }
+                return window.location.origin;
             }
 
             function derivarUsuarioDesdeCorreo(correo) {
@@ -235,7 +241,7 @@
                     usuarioBloqueado: true,
                     debeCambiarClave: Boolean(debeCambiarClave)
                 }));
-                window.location.href = "index.html";
+                window.location.href = DESTINO_POST_LOGIN;
             }
 
             // Detectar si viene desde el enlace de aprobación del correo
@@ -355,7 +361,7 @@
                     completarIngreso(usuarioData, data.debeCambiarClave === true);
                 } catch (err) {
                     console.error("Error al iniciar sesión:", err);
-                    mostrarErrorLogin("⚠ Credenciales incorrectas.");
+                    mostrarErrorLogin("⚠ No se pudo conectar con el servidor.");
                 }
             });
 
